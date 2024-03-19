@@ -18,7 +18,8 @@ class NOJDeficit(NiayifarGaussianDeficit, WakeRadiusTopHat):
     def __init__(self, ct2a=ct2a_madsen, k=.1, rotorAvgModel=AreaOverlapAvgModel(), groundModel=None):
         DeficitModel.__init__(self, rotorAvgModel=rotorAvgModel, groundModel=groundModel,
                               use_effective_ws=False, use_effective_ti=False)
-        self.a = [0, k]
+        self.a0 = 0
+        self.a1 = k
         self.ct2a = ct2a
 
     def _calc_layout_terms(self, D_src_il, wake_radius_ijl, dw_ijlk, cw_ijlk, **kwargs):
