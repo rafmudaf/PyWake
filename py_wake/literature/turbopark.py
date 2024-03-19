@@ -22,10 +22,10 @@ class Nygaard_2022(PropagateDownwind):
         - The mirror model is used as the default ground model.
     """
 
-    def __init__(self, site, windTurbines):
-
+    def __init__(self, site, windTurbines, A=0.04, deflectionModel=None):
         wake_deficitModel = TurboGaussianDeficit(
             ct2a=ct2a_mom1d,
+            A=A,
             groundModel=Mirror(),
             rotorAvgModel=GaussianOverlapAvgModel())
 
