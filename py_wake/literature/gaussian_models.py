@@ -73,7 +73,7 @@ class Niayifar_PorteAgel_2016(PropagateDownwind):
         - The Crespo Hernandez turbulence model is used to calculate the added streamwise turbulence intensity, Eq 14 in [1].
     """
 
-    def __init__(self, site, windTurbines, a=[0.38, 4e-3], ceps=.2, superpositionModel=LinearSum(),
+    def __init__(self, site, windTurbines, a0=0.38, a1=4e-3, ceps=.2, superpositionModel=LinearSum(),
                  deflectionModel=None, turbulenceModel=CrespoHernandez(), rotorAvgModel=None, groundModel=None,
                  use_effective_ws=True, use_effective_ti=True):
         """
@@ -95,7 +95,7 @@ class Niayifar_PorteAgel_2016(PropagateDownwind):
             Option to use either the local (True) or free-stream (False) turbulence intensity experienced by the ith turbine
         """
         PropagateDownwind.__init__(self, site, windTurbines,
-                                   wake_deficitModel=NiayifarGaussianDeficit(a=a, ceps=ceps,
+                                   wake_deficitModel=NiayifarGaussianDeficit(a0=a0, a1=a1, ceps=ceps,
                                                                              rotorAvgModel=rotorAvgModel,
                                                                              groundModel=groundModel,
                                                                              use_effective_ws=use_effective_ws,
