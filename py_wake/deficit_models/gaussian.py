@@ -143,18 +143,19 @@ class NiayifarGaussianDeficit(BastankhahGaussianDeficit):
 
     """
 
-    def __init__(self, ct2a=ct2a_madsen, a=[0.38, 4e-3], ceps=.2, ctlim=0.899, use_effective_ws=False, use_effective_ti=True,
+    def __init__(self, ct2a=ct2a_madsen, a0=0.38, a1=4e-3, ceps=.2, ctlim=0.899, use_effective_ws=False, use_effective_ti=True,
                  rotorAvgModel=None, groundModel=None):
         DeficitModel.__init__(self, rotorAvgModel=rotorAvgModel, groundModel=groundModel,
                               use_effective_ws=use_effective_ws, use_effective_ti=use_effective_ti)
         self._ceps = ceps
         self._ctlim = ctlim
-        self.a = a
+        self.a0 = a0
+        self.a1 = a1
         self.ct2a = ct2a
 
     def k_ilk(self, **kwargs):
         TI_ref_ilk = kwargs[self.TI_key]
-        k_ilk = self.a[0] * TI_ref_ilk + self.a[1]
+        k_ilk = self.a0 * TI_ref_ilk + self.a1
         return k_ilk
 
 

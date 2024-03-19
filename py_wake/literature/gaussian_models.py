@@ -79,7 +79,7 @@ class Niayifar_PorteAgel_2016(PropagateDownwind):
     """
 
     def __init__(self, site, windTurbines,
-                 a=[0.3837, 0.003678], ceps=.2, ct2a=ct2a_mom1d, use_effective_ws=True, use_effective_ti=True,
+                 a0=0.38, a1=4e-3, ceps=.2, ct2a=ct2a_mom1d, use_effective_ws=True, use_effective_ti=True,
                  superpositionModel=LinearSum(),
                  deflectionModel=None,
                  turbulenceModel=CrespoHernandez(ct2a=ct2a_mom1d, c=[0.73, 0.8325, 0.0325, -0.32], addedTurbulenceSuperpositionModel=SqrMaxSum()),
@@ -104,7 +104,7 @@ class Niayifar_PorteAgel_2016(PropagateDownwind):
             Option to use either the local (True) or free-stream (False) turbulence intensity experienced by the ith turbine
         """
         PropagateDownwind.__init__(self, site, windTurbines,
-                                   wake_deficitModel=NiayifarGaussianDeficit(a=a, ceps=ceps, ct2a=ct2a,
+                                   wake_deficitModel=NiayifarGaussianDeficit(a0=a0, a1=a1, ceps=ceps, ct2a=ct2a,
                                                                              rotorAvgModel=rotorAvgModel,
                                                                              groundModel=groundModel,
                                                                              use_effective_ws=use_effective_ws,
