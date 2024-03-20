@@ -399,7 +399,7 @@ class HorizontalGrid(Grid):
             h = self.h
         self.plane = "XY", h
 
-        X, Y = np.meshgrid(x, y)
+        X, Y = np.meshgrid(x, y, indexing="ij")
         H = np.broadcast_to(h, X.shape)
         return X, Y, X.flatten(), Y.flatten(), H.flatten()
 
