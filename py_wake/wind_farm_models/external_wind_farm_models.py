@@ -5,7 +5,6 @@ import numpy as np
 import xarray as xr
 from numpy import newaxis as na
 from scipy.interpolate import RegularGridInterpolator as RGI
-from tqdm import tqdm
 
 from py_wake.flow_map import Points
 from py_wake.site.distance import StraightDistance
@@ -149,7 +148,7 @@ class ExternalXRAbsWindFarm(ExternalWindFarm):
                         coords=dict(x=grid_xyh[0], y=grid_xyh[1], h=np.atleast_1d(grid_xyh[2]), wd=sim_res.wd, ws=sim_res.ws))
 
         from py_wake.site.streamline_distance import StreamlineDistance
-        return cls(name, ds, windFarmModel.windTurbines, wt_x, wt_y,
+        return cls(name, ds.sortby('wd'), windFarmModel.windTurbines, wt_x, wt_y,
                    relative_distance=not isinstance(windFarmModel.site.distance, StreamlineDistance))
 
     def __call__(self, i, l, deficit_jlk, WS_eff_ilk, WS_ilk,
@@ -216,7 +215,7 @@ class ExternalXRRelWindFarm(ExternalXRAbsWindFarm):
                         coords=dict(x=grid_xyh[0], y=grid_xyh[1], h=grid_xyh[2], wd=sim_res.wd, ws=sim_res.ws))
 
         from py_wake.site.streamline_distance import StreamlineDistance
-        return cls(name, ds, windFarmModel.windTurbines, wt_x, wt_y,
+        return cls(name, ds.sortby('wd'), windFarmModel.windTurbines, wt_x, wt_y,
                    relative_distance=not isinstance(windFarmModel.site.distance, StreamlineDistance))
 
     def __call__(self, i, l, deficit_jlk, WS_eff_ilk, WS_ilk,
