@@ -178,6 +178,8 @@ def get_exclude_dict():
     )
     from py_wake.site.streamline_distance import StreamlineDistance
     from py_wake.superposition_models import LinearSum
+    from py_wake.deficit_models.deficit_model import XRLUTDeficitModel
+    from py_wake.deficit_models.rans_lut import RANSLUTDeficit, RANSLUTConvDeficit
     from py_wake.turbulence_models.rans_lut_turb import RANSLUTTurbulence
     from py_wake.turbulence_models.turbulence_model import XRLUTTurbulenceModel
     from py_wake.wind_farm_models.engineering_models import (
@@ -190,10 +192,10 @@ def get_exclude_dict():
         "DeficitModel": ([ConvectionDeficitModel, BlockageDeficitModel, WakeDeficitModel, XRLUTDeficitModel,
                           RANSLUTDeficit],
                          [RotorAvgModel], NOJDeficit),
-        "WakeDeficitModel": ([ConvectionDeficitModel, XRLUTDeficitModel, RANSLUTDeficit], [RotorAvgModel], NOJDeficit),
+        "WakeDeficitModel": ([ConvectionDeficitModel, XRLUTDeficitModel, RANSLUTDeficit, RANSLUTConvDeficit], [RotorAvgModel], NOJDeficit),
         "RotorAvgModel": ([NodeRotorAvgModel], [], None),
         "SuperpositionModel": ([], [], LinearSum),
-        "BlockageDeficitModel": ([XRLUTDeficitModel, RANSLUTDeficit], [], None),
+        "BlockageDeficitModel": ([XRLUTDeficitModel, RANSLUTDeficit], [RANSLUTConvDeficit], None),
         "DeflectionModel": ([DeflectionIntegrator], [], None),
         "TurbulenceModel": ([XRLUTTurbulenceModel, RANSLUTTurbulence], [], None),
         "AddedTurbulenceSuperpositionModel": ([], [], None),
