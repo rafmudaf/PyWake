@@ -48,3 +48,7 @@ def test_get_map_func():
     map_func = get_map_func(n_cpu=2, starmap=False, verbose=False)
     t = timeit(lambda x: list(map_func(f, x)), min_runs=3)(np.arange(6))[1]
     assert np.min(t) < 0.5
+
+    map_func = get_map_func(n_cpu=None, starmap=False, verbose=False)
+    t = timeit(lambda x: list(map_func(f, x)), min_runs=3)(np.arange(6))[1]
+    assert np.min(t) < 0.5

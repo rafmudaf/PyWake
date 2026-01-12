@@ -75,9 +75,12 @@ def get_n_cpu(n_cpu):
 
 
 def get_map_func(n_cpu, starmap=False, verbose=True, desc='', unit='it', leave=True):
-    n_cpu = get_n_cpu(n_cpu)
-    MPI = load_MPI()
+    if n_cpu is None:
+        n_cpu = get_n_cpu(n_cpu)
+
     if n_cpu > 1:
+        n_cpu = get_n_cpu(n_cpu)
+        MPI = load_MPI()
         if MPI and n_cpu > 1:  # pragma: no cover
             map_func = get_mpi_map_func(n_cpu, starmap=starmap)
         else:
