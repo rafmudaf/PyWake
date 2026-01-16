@@ -2,6 +2,7 @@ import xarray as xr
 from numpy import newaxis as na
 
 from py_wake import np
+from py_wake.utils import gradients
 
 try:  # pragma: no cover
     from xarray.plot.plot import _PlotMethods as DataArrayPlotAccessor
@@ -77,7 +78,7 @@ class interp_ilk():
                 return data, None
             c, v = coords[name], var[name].data
             indices = None
-            if ip_dims and ip_dims[-1] == name and np.all(np.array([x in np.atleast_1d(v) for x in c])):
+            if ip_dims and ip_dims[-1] == name and np.all(gradients.isin(c, np.atleast_1d(v))):
                 # all coordinates in var, no need to interpolate
                 ip_dims.remove(name)
                 indices = np.searchsorted(v, c)

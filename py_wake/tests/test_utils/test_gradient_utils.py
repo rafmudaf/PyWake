@@ -527,3 +527,17 @@ def test_item_assign(idx, axis):
 
     npt.assert_array_almost_equal(fd(f)(x), cs(f)(x))
     npt.assert_array_equal(cs(f)(x), autograd(f)(x))
+
+
+def test_isin():
+    npt.assert_array_equal(gradients.isin([2, 3, 4], [4, 5]), [0, 0, 1])
+    x = np.array([2., 3, 4, 5, 6])
+
+    def f(x):
+        return np.sum(x[gradients.isin(x, [4, 5])])
+
+    def g(y):
+        return np.sum(x[gradients.isin(x, y)])
+
+    npt.assert_array_equal(autograd(f)(x), [0, 0, 1, 1, 0])
+    npt.assert_array_equal(autograd(g)([4., 5]), [0, 0])

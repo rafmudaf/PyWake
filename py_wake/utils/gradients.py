@@ -432,3 +432,11 @@ def sign(x):
     if np.iscomplexobj(x):
         x = x.real
     return np.sign(x)
+
+
+def isin(element, test_elements, assume_unique=False, invert=False, *, kind=None):
+    if isinstance(element, ArrayBox):
+        element = element._value
+    if isinstance(test_elements, ArrayBox):
+        test_elements = test_elements._value
+    return np.isin(element, test_elements, assume_unique, invert, kind=kind)
