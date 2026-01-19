@@ -1,8 +1,9 @@
-from py_wake import np
-from numpy import newaxis as na
-from numpy import atleast_1d
-from py_wake.utils import gradients
 from autograd.numpy.numpy_boxes import ArrayBox
+from numpy import atleast_1d
+from numpy import newaxis as na
+
+from py_wake import np
+from py_wake.utils import gradients
 
 
 class GridInterpolator(object):
@@ -90,8 +91,9 @@ class GridInterpolator(object):
             xpi = np.minimum(np.maximum(xpi, 0), self.n - 1)
 
         if 'nearest' in method:
-            # round x.5 down to match old results
-            xpi = np.where(np.asarray(linear), xpi, np.round(xpi - .1 * (gradients.mod(xpi, 2) == 1.5)))
+            # round x.5 up (np.round rounds x.5 towards nearest even number)
+            xpi = np.where(np.asarray(linear), xpi, gradients.floor(xpi + .5))
+
         xpif, xpi0 = gradients.modf(xpi)
 
         int_box_axes = [(np.asarray([0], dtype=int), np.asarray([0, 1], dtype=int))[l] for l in linear]

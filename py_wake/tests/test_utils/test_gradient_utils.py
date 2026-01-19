@@ -1,19 +1,27 @@
-from autograd import numpy as anp
-from autograd.core import primitive, defvjp
-import pytest
-
 import matplotlib.pyplot as plt
+import pytest
+from autograd import numpy as anp
+from autograd.core import defvjp, primitive
+from xarray.core.dataset import Dataset
+from numpy import newaxis as na
 from py_wake import np
 from py_wake.examples.data.hornsrev1 import V80
 from py_wake.examples.data.iea37._iea37 import IEA37_WindTurbines
 from py_wake.tests import npt
 from py_wake.utils import gradients
-from py_wake.utils.gradients import autograd, plot_gradients, fd, cs, hypot, cabs, interp, set_gradient_function, \
-    item_assign
-from py_wake.wind_turbines import WindTurbines
-from py_wake.wind_turbines import _wind_turbines
-from xarray.core.dataset import Dataset
+from py_wake.utils.gradients import (
+    autograd,
+    cabs,
+    cs,
+    fd,
+    hypot,
+    interp,
+    item_assign,
+    plot_gradients,
+    set_gradient_function,
+)
 from py_wake.utils.numpy_utils import AutogradNumpy
+from py_wake.wind_turbines import WindTurbines, _wind_turbines
 
 
 @pytest.mark.parametrize('obj', [_wind_turbines, WindTurbines, V80().power, _wind_turbines.__dict__])
@@ -541,3 +549,13 @@ def test_isin():
 
     npt.assert_array_equal(autograd(f)(x), [0, 0, 1, 1, 0])
     npt.assert_array_equal(autograd(g)([4., 5]), [0, 0])
+
+
+def test_floor():
+    x = np.array([.49, .5, .51, 1.49, 1.5, 1.51])
+
+    npt.assert_array_equal(gradients.floor(x), np.floor(x))
+    npt.assert_array_equal(gradients.floor(x + 1j), np.floor(x) + 1j)
+    x = (np.linspace(-3, 3)[na] + np.linspace(-3, 3)[:, na] * 1j).flatten()
+    npt.assert_array_equal(gradients.floor(x + .5 + .5j), np.round(x))
+    print()

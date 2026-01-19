@@ -434,6 +434,13 @@ def sign(x):
     return np.sign(x)
 
 
+def floor(x):
+    if np.iscomplexobj(x):
+        return np.floor(x.real) + np.floor(x.imag) * 1j
+    else:
+        return np.floor(x)
+
+
 def isin(element, test_elements, assume_unique=False, invert=False, *, kind=None):
     if isinstance(element, ArrayBox):
         element = element._value

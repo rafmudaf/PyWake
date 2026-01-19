@@ -1,13 +1,15 @@
 import os
-import pytest
-from py_wake import np
+
 import matplotlib.pyplot as plt
-from py_wake.tests import npt
-from py_wake.site._site import UniformWeibullSite, UniformSite
+import pytest
+
+from py_wake import np
+from py_wake.examples.data.iea37._iea37 import IEA37Site
+from py_wake.site._site import UniformSite, UniformWeibullSite
 from py_wake.site.shear import PowerShear
 from py_wake.site.xrsite import XRSite
+from py_wake.tests import npt
 from py_wake.tests.test_files import tfp
-from py_wake.examples.data.iea37._iea37 import IEA37Site
 
 f = [0.035972, 0.039487, 0.051674, 0.070002, 0.083645, 0.064348,
      0.086432, 0.117705, 0.151576, 0.147379, 0.10012, 0.05166]
@@ -97,8 +99,8 @@ def test_plot_ws_distribution(site):
 
     plt.figure()
     p = site.plot_ws_distribution(wd=[90, 180, 270, 0], include_wd_distribution=True)
-    npt.assert_array_almost_equal(p.ws[p.argmax('ws')], [8.25, 8.15, 9.55, 7.75, ])
-    npt.assert_array_almost_equal(p.max('ws'), [0.002182, 0.002771, 0.003548, 0.001257])
+    npt.assert_array_almost_equal(p.ws[p.argmax('ws')], [8.25, 8.15, 9.55, 7.75])
+    npt.assert_array_almost_equal(p.max('ws'), [0.002169, 0.002771, 0.003548, 0.001269])
 
     if 0:
         plt.show()
