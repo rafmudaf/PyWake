@@ -9,6 +9,7 @@ from py_wake.deflection_models.deflection_model import DeflectionModel
 from py_wake.tests.test_files import tfp
 from py_wake.utils.fuga_utils import FugaUtils
 from py_wake.utils.grid_interpolator import GridInterpolator
+from py_wake.utils import gradients
 
 
 class FugaDeflection(FugaUtils, DeflectionModel):
@@ -52,7 +53,7 @@ class FugaDeflection(FugaUtils, DeflectionModel):
 
         WS_hub_ilk = WS_ilk
 
-        theta_ilk = np.deg2rad(yaw_ilk)
+        theta_ilk = gradients.deg2rad(yaw_ilk)
         cos_ilk, sin_ilk = np.cos(theta_ilk), np.sin(theta_ilk)
 
         F_ilk = ct_ilk * (WS_eff_ilk)**2 / (WS_ilk * WS_hub_ilk)

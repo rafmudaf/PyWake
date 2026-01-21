@@ -273,6 +273,11 @@ def test_plot_gradients():
     plt.close('all')
 
 
+def test_minimum():
+    assert gradients.minimum(4, 5) == 4
+    assert autograd(gradients.minimum)(4, 5) == 1
+
+
 @pytest.mark.parametrize('x', [0., .4])
 def test_sqrt_sqare(x):
     def f(x):

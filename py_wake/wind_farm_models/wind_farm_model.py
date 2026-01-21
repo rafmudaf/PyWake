@@ -54,11 +54,12 @@ class WindFarmModel(ABC):
                 add_arg(k, opt)
         return wt_kwargs
 
-    def _run(self, x, y, h=None, type=0, wd=None, ws=None, time=False, verbose=False,  # @ReservedAssignment
+    def _run(self, x, y, h=None, type=0, wd=None, ws=None, time=False, verbose=None,  # @ReservedAssignment
              n_cpu=1, wd_chunks=None, ws_chunks=1, **kwargs):
 
         assert len(x) == len(y)
-        self.verbose = verbose
+        if verbose is not None:
+            self.verbose = verbose
         h, _ = self.windTurbines.get_defaults(len(x), type, h)
         if len(self.externalWindFarms):
             err_msg = 'Inflow dependent positions not supported in combination with external wind farms'
@@ -82,7 +83,7 @@ class WindFarmModel(ABC):
                                         n_cpu=n_cpu, wd_chunks=wd_chunks, ws_chunks=ws_chunks,
                                         **kwargs_ilk)
 
-    def __call__(self, x, y, h=None, type=0, wd=None, ws=None, time=False, verbose=False,  # @ReservedAssignment
+    def __call__(self, x, y, h=None, type=0, wd=None, ws=None, time=False, verbose=None,  # @ReservedAssignment
                  n_cpu=1, wd_chunks=None, ws_chunks=1, return_simulationResult=True, **kwargs):
         """Run the wind farm simulation
 
@@ -290,8 +291,8 @@ class WindFarmModel(ABC):
         if time is not False:
             wd_chunks = ws_chunks = int(np.maximum(ws_chunks, wd_chunks))
 
-        wd_i = np.linspace(0, len(wd) + 1, wd_chunks + 1).astype(int)
-        ws_i = np.linspace(0, len(ws) + 1, ws_chunks + 1).astype(int)
+        wd_i = np.linspace(0, len(wd), wd_chunks + 1).astype(int)
+        ws_i = np.linspace(0, len(ws), ws_chunks + 1).astype(int)
 
         if time is False:
             # (wd x ws) matrix

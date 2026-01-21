@@ -60,10 +60,15 @@ class GridInterpolator(object):
         """
         if len(np.atleast_1d(xp)) == 0:
             return np.array([])
-        method = atleast_1d(method or self.method)
+        if method is None:
+            method = self.method
+        method = np.atleast_1d(method)
         assert all([m in ['linear', 'nearest'] for m in method]), 'method must be "linear" or "nearest"'
         assert len(method) in [1, len(self.x)]
         linear = [method[min(len(method) - 1, i)] == 'linear' for i in range(len(self.x))]
+        chunks = np.maximum(2**np.sum(linear) * np.prod(np.shape(xp)) * 8 / 1024**2 // 100, 1)
+        if chunks > 1:
+            return np.concatenate([self.__call__(xp_, method, bounds, deg) for xp_ in np.array_split(xp, chunks)])
         bounds = bounds or self.bounds
         assert bounds in ['check', 'limit', 'ignore'], 'bounds must be "check", "limit" or "ignore"'
         xp = np.atleast_2d(xp)

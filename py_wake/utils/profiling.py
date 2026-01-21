@@ -26,7 +26,7 @@ def timeit(func, min_time=0, min_runs=1, verbose=False, line_profile=False, prof
         else:
             t_lst = []
             time_start = time.perf_counter()
-            for i in range(100000):
+            for i in range(10000000):
                 t0 = time.perf_counter_ns()
                 res = func(*args, **kwargs)
                 t_lst.append((time.perf_counter_ns() - t0) * 1e-9)
