@@ -213,7 +213,7 @@ class FlowMap(FlowBox):
         y_i = self.simulationResult.y.mean(set(self.simulationResult.x.dims) - {'wt'}).values[:n]
         type_i = self.simulationResult.type.values[:n]
         if self.plane[0] in ['XZ', "YZ"]:
-            h_i = self.simulationResult.h.values
+            h_ilk = self.simulationResult.h.ilk()
             x_ilk, y_ilk = self.simulationResult.x.ilk(), self.simulationResult.y.ilk()
 
             z_ilk = self.simulationResult.windFarmModel.site.elevation(x_ilk, y_ilk)
@@ -232,10 +232,10 @@ class FlowMap(FlowBox):
                         return v[:, l, k]
                     yaw, tilt = get('yaw'), get('tilt')
                     if self.plane[0] == 'XZ':
-                        fm.windTurbines.plot_yz(x_ilk[:, l, k], z_ilk[:, l, k], h_i, types=type_i, wd=wd, yaw=yaw, tilt=tilt,
+                        fm.windTurbines.plot_yz(x_ilk[:, l, k], z_ilk[:, l, k], h_ilk[:, l, k], types=type_i, wd=wd, yaw=yaw, tilt=tilt,
                                                 normalize_with=normalize_with, ax=ax)
                     else:
-                        fm.windTurbines.plot_yz(y_i, z_ilk[:, l, k], h_i, types=type_i, wd=self.wd, yaw=yaw, tilt=tilt,
+                        fm.windTurbines.plot_yz(y_i, z_ilk[:, l, k], h_ilk[:, l, k], types=type_i, wd=self.wd, yaw=yaw, tilt=tilt,
                                                 normalize_with=normalize_with, ax=ax)
         else:  # self.plane[0] == "XY":
             def get(k):

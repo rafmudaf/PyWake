@@ -356,6 +356,33 @@ def test_flow_map_point_chunks():
         plt.show()
 
 
+def test_flow_map_type():
+    site = IEA37Site(16)
+
+    v80 = V80()
+    v120 = WindTurbine('V120 low induction', 120, 90, powerCtFunction=PowerCtTabular(
+        hornsrev1.power_curve[:, 0], hornsrev1.power_curve[:, 1], 'w', hornsrev1.ct_curve[:, 1] * .8))
+
+    windTurbines = WindTurbines.from_WindTurbine_lst([v80, v120])
+    wfm = PropagateDownwind(site, windTurbines,
+                            wake_deficitModel=IEA37SimpleBastankhahGaussianDeficit(),
+                            superpositionModel=SquaredSum())
+
+    sim_res1, sim_res2 = [wfm([0, -50], [0, 0], h=[70, 150], type=[0, 1], wd=[90, 270], n_cpu=n) for n in [1, 2]]
+    fm_dict = {(i, j): sim_res.flow_map(XZGrid(y=0, z=np.linspace(0, 250), x=100), wd=270, n_cpu=j)
+               for j in [1, 2] for i, sim_res in enumerate([sim_res1, sim_res2], 1)}
+
+    if 0:
+        sim_res1.flow_map(XZGrid(y=0, z=np.linspace(0, 250)), wd=270).plot_wake_map()
+        for (i, j), fm in fm_dict.items():
+            plt.plot(fm.WS_eff.squeeze() * 10, fm.h, label=f'WS_eff x 10, n_cpu=({i}, {j})')
+        plt.legend()
+        plt.show()
+
+    for (i, j), fm in fm_dict.items():
+        npt.assert_array_equal(fm.WS_eff.squeeze(), fm_dict[(1, 1)].WS_eff.squeeze())
+
+
 def test_aep_map():
     wfm = IEA37CaseStudy1(16)
     x, y = [0, 600, 1200], [0, 0, 0]  # site.initial_position[:2].T
@@ -376,7 +403,7 @@ def test_aep_map_type():
 
     x, y = [0, 600, 1200], [0, 0, 0]  # site.initial_position[:2].T
     v80 = V80()
-    v120 = WindTurbine('V80_low_induc', 80, 70, powerCtFunction=PowerCtTabular(
+    v120 = WindTurbine('V120', 120, 150, powerCtFunction=PowerCtTabular(
         hornsrev1.power_curve[:, 0], hornsrev1.power_curve[:, 1] * 1.5, 'w', hornsrev1.ct_curve[:, 1]))
 
     windTurbines = WindTurbines.from_WindTurbine_lst([v80, v120])

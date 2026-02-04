@@ -206,7 +206,7 @@ class EngineeringWindFarmModel(WindFarmModel):
         """Used for parallel execution"""
         return self.calc_wt_interaction(**kwargs)
 
-    def calc_wt_interaction(self, x_ilk, y_ilk, h_i=None, type_i=0, wd=None, ws=None, time=False,
+    def calc_wt_interaction(self, x_ilk, y_ilk, h_ilk=None, type_i=0, wd=None, ws=None, time=False,
                             WS_eff_ilk=None,
                             n_cpu=1, wd_chunks=None, ws_chunks=1,
                             **kwargs):
@@ -226,17 +226,17 @@ class EngineeringWindFarmModel(WindFarmModel):
             If ws_chunks is None, ws_chunks is set to 1
         """
 
-        h_i, D_i = self.windTurbines.get_defaults(len(x_ilk), type_i, h_i)
+        h_ilk, D_i = self.windTurbines.get_defaults(len(x_ilk), type_i, h_ilk)
         wd, ws = self.site.get_defaults(wd, ws, time)
         I, L, K, = len(x_ilk), len(wd), (1, len(ws))[time is False]
-        kwargs.update(dict(x_ilk=x_ilk, y_ilk=y_ilk, h_ilk=h_i[:, na, na], wd=wd, ws=ws, time=time,
+        kwargs.update(dict(x_ilk=x_ilk, y_ilk=y_ilk, h_ilk=h_ilk, wd=wd, ws=ws, time=time,
                            type_i=np.zeros_like(D_i) + type_i))
 
         for inputModifierModel in self.inputModifierModels:
             kwargs.update(inputModifierModel.setup(**kwargs))
 
         # Find local wind speed, wind direction, turbulence intensity and probability
-        lw = self.site.local_wind(x=np.mean(x_ilk, (1, 2)), y=np.mean(y_ilk, (1, 2)), h=h_i,
+        lw = self.site.local_wind(x=np.mean(x_ilk, (1, 2)), y=np.mean(y_ilk, (1, 2)), h=np.mean(h_ilk, (1, 2)),
                                   wd=kwargs['wd'], ws=kwargs['ws'], time=kwargs['time'])
         if time is False:
             assert lw['WS_ilk'].shape[2] == len(ws), \
@@ -372,7 +372,8 @@ class EngineeringWindFarmModel(WindFarmModel):
         # Calculate deficit
         # ===============================================================================================================
         if isinstance(self.superpositionModel, (WeightedSum, CumulativeWakeSum)):
-            deficit_ijlk, deficit_centre_ijlk, uc_ijlk, sigma_sqr_ijlk, blockage_ijlk = self._calc_deficit_convection(**model_kwargs)
+            deficit_ijlk, deficit_centre_ijlk, uc_ijlk, sigma_sqr_ijlk, blockage_ijlk = self._calc_deficit_convection(
+                **model_kwargs)
         else:
             deficit_ijlk, blockage_ijlk = self._calc_deficit(**model_kwargs)
 
@@ -396,7 +397,9 @@ class EngineeringWindFarmModel(WindFarmModel):
         sp_kwargs = dict(deficit_jxxx=deficit_ijlk)
         if isinstance(self.superpositionModel, (WeightedSum, CumulativeWakeSum)):
             if isinstance(self.superpositionModel, WeightedSum):
-                sp_kwargs.update({'WS_xxx': WS_jlk, 'convection_velocity_jxxx': uc_ijlk, 'deficit_centre_jxxx': deficit_centre_ijlk})
+                sp_kwargs.update({'WS_xxx': WS_jlk,
+                                  'convection_velocity_jxxx': uc_ijlk,
+                                  'deficit_centre_jxxx': deficit_centre_ijlk})
             else:
                 sp_kwargs.update({'WS0_xxx': model_kwargs['WS_ilk'] * np.ones_like(model_kwargs['WS_eff_ilk']),
                                   'WS_eff_xxx': model_kwargs['WS_eff_ilk'], 'ct_xxx': model_kwargs['ct_ilk'],
