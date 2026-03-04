@@ -116,7 +116,7 @@ class Hornsrev1WRFSite(WRFSite):
 
     def __init__(self, time_slice=slice("2020-04-01 00:00", "2020-04-30"), streamlines=True):
         wrf_ds = xr.load_dataset(ptf('wrf/Hornsrev1_2020_04.nc',
-                                     known_hash='65f7f774f6b67bb89870b7978a601b945aaf9bb17894351e6e607fdbcdbc8973'))
+                                     known_hash='2df8efff6ed71d3c84639ba3d669b4d65e1ec45170b37f0305f3f0f7b54df048'))
 
         WRFSite.__init__(self, wrf_ds.sel(time=time_slice), streamlines=streamlines)
         try:
