@@ -1,5 +1,5 @@
 image: continuumio/anaconda3
-
+ 
 stages:
   - test
   - test_plugins
