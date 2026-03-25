@@ -1,4 +1,4 @@
-image: continuumio/anaconda3
+image: condaforge/miniforge3:latest
  
 stages:
   - test
@@ -9,8 +9,9 @@ stages:
 # ===== TEST PyWake debian=====
 test_PyWake:  # name the job what we like
   stage:  # build, test, deploy defined by default [2]
-    test
+    test 
   script:
+  - mamba install python==3.12
   - pip install --upgrade pip
   - pip install -e .[test] --timeout 100 --resume-retries 3 #, fails anyway if Tensorflow does not install in <10min
   - python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
@@ -45,6 +46,7 @@ check_code_style:  # name the job what we like
   stage:  # build, test, deploy defined by default [2]
     test
   script:
+  - pip install pycodestyle
   - pip install -e . --user
   - pycodestyle --ignore=E501,W504,E741 py_wake
   tags:  # only runners with this tag can do the job [3]

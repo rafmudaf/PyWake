@@ -99,12 +99,12 @@ class XRLUTModel(Model):
         elif type_il.shape[0] == 1:
             # PropagateDownwind or All2AllIterative with only one turbine, type depends on l (wind direction)
             output_ijlk = np.concatenate([get_type_output(int(t), [inp[:, :, [l]] for inp in input_IJLK_lst])
-                                          for l, t in enumerate(type_il[0])], 2)
+                                          for l, t in enumerate(type_il.flatten())], 2)
         else:
             # All2AllIterative, type depends on i (wind turbine)
             assert type_il.shape[1] == 1
             output_ijlk = np.concatenate([get_type_output(int(t), [inp[[i]] for inp in input_IJLK_lst])
-                                          for i, t in enumerate(type_il[:, 0])], 0)
+                                          for i, t in enumerate(type_il.flatten())], 0)
 
         return self.get_output(output_ijlk, **kwargs)
 
