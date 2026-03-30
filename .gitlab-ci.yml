@@ -12,8 +12,9 @@ test_PyWake:  # name the job what we like
     test 
   script:
   - mamba install python==3.12
+  - mamba install tensorflow windkit -c https://conda.windenergy.dtu.dk/channel/open/ -c conda-forge
   - pip install --upgrade pip
-  - pip install -e .[test] --timeout 100 --resume-retries 3 #, fails anyway if Tensorflow does not install in <10min
+  - pip install -e .[test]
   - python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
   - python -V
   - pip list
@@ -62,6 +63,7 @@ test_PyWake_windows:  # name the job what we like
   image: registry.windenergy.dtu.dk/dockerimages/windows-python:ltsc2019_py312
   script:  # runs on windows machine due to tag below
   - pip install -e .[test]
+  - pip install pip-system-certs # to avoid [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate
   - python -c "import os; from pathlib import Path; p=Path(os.getenv('APPDATA'))/'DTU Wind Energy/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
   - python -V
   - pip list

@@ -6,15 +6,16 @@ from py_wake.site.xrsite import XRSite
 from py_wake.utils.streamline import VectorField3D
 
 
-def wrf2pywake(ds, TI=None):
+def wrf2pywake(ds, TI=None, variable_lst=['WD', 'WS', 'TI']):
     if 'west_east' in ds:
         ds = ds.rename(west_east='x', south_north='y', height='h')
     if 'TI' not in ds:
         if TI is None:
             TI = np.sqrt(2 / 3 * ds['TKE']) / ds['WS']
         ds['TI'] = TI
-
-    return ds[['WD', 'WS', 'TI']].transpose('x', 'y', 'h', 'time')
+    ds = ds[variable_lst]
+    dims = [d for d in ['x', 'y', 'h', 'time'] if d in ds.dims]
+    return ds.transpose(*dims)
 
 
 class WRFVectorField(VectorField3D):

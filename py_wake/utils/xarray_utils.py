@@ -171,6 +171,19 @@ class sel_interp_all():
         return da.interp(**interp_coords, method=method, kwargs=kwargs)
 
 
+class interp_log():
+    def __init__(self, dataArray):
+        self.dataArray = dataArray
+
+    def __call__(self, method="linear", **coords):
+        da = self.dataArray.interp(**coords, method='nearest')
+        da_log = self.dataArray.copy()
+        for n in coords:
+            da_log[n] = np.log(self.dataArray[n])
+        da[:] = da_log.interp(**{n: np.log(c) for n, c in coords.items()}, method=method).data
+        return da
+
+
 class plot_xy_map(DataArrayPlotAccessor):
     def __init__(self, darray):
         DataArrayPlotAccessor.__init__(self, darray)
@@ -187,6 +200,8 @@ if not hasattr(xr.DataArray(None), 'ilk'):
     xr.register_dataarray_accessor("ilk")(ilk)
     xr.register_dataarray_accessor("interp_ilk")(interp_ilk)
     xr.register_dataarray_accessor("sel_interp_all")(sel_interp_all)
+    xr.register_dataarray_accessor("interp_log")(interp_log)
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         xr.register_dataarray_accessor('plot')(plot_xy_map)

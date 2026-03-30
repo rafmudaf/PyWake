@@ -20,6 +20,7 @@ def main():
     if __name__ == '__main__':
         import matplotlib.pyplot as plt
         dk = dk_coast()
+        dk.plot()
         plt.show()
 
 

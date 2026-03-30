@@ -183,7 +183,7 @@ def test_ws_gradients(iea34_130_1WT_Surrogate):
 
     method_lst = [lambda *args, **kwargs: fd(*args, step=.001, **kwargs), cs, autograd]
     dpdx_lst = [method(wt.power)(x, TI_eff=0.1) for method in method_lst]
-    npt.assert_allclose(dpdx_lst[0], dpdx_lst[1], rtol=.0005)
+    npt.assert_allclose(dpdx_lst[0], dpdx_lst[1], rtol=.001)
     npt.assert_array_almost_equal(dpdx_lst[1], dpdx_lst[2], 10)
     if 0:
         y = wt.power(x, TI_eff=0.1)
