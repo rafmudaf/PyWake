@@ -222,6 +222,8 @@ class Larsen_etal2026(WindFarmModel):
         return np.array([e1, e2, e3, e4, e5, e6])
 
     def get_xi_lst(self, N, S):
+        assert 5 <= N <= 50, f'Model should not be used outside calibration interval of N=[5,50], but is used with N={N}'
+        assert 3 <= S <= 13, f'Model should not be used outside calibration interval of S=[3,13], but is used with S={S}'
         sqrtNT = N
         N_range = 45.0
         N_offset = 55.0
