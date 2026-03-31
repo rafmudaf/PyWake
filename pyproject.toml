@@ -67,7 +67,7 @@ docs = [
           "ipympl", 
           "ipykernel",
           "pypandoc",
-          'topfarm',
+          'topfarm>=2.5',
           'windkit',
           'geopandas',
         ]
