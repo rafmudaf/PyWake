@@ -18,7 +18,7 @@ from py_wake.examples.data.hornsrev1 import (
 )
 from py_wake.site._site import UniformSite
 from py_wake.tests import ptf
-from py_wake.utils.newa import NEWAPointTimeseries
+from py_wake.utils.newa import NEWAPointTimeseries, NEWAGridTimeseries, to_newa_crs
 from py_wake.utils.plotting import setup_plot
 import urllib.error
 
@@ -33,6 +33,39 @@ def zarr_file():
         yield folder
 
 
+def test_to_newa_crs():
+    x, y = to_newa_crs(wt_x[0], wt_y[0], crs='epsg:25832')
+    npt.assert_allclose([x[0], y[0]], [-444357.78223744, 183555.988855])
+
+    x, y = to_newa_crs(7.76336669921875, 55.44114685058594, crs='epsg:4326')
+
+    npt.assert_allclose([x[0], y[0]], [-447000, 177000], atol=2)
+
+
+def test_NEWAGridTimeseries_compare_zarr_web(zarr_file):
+    h = [70, 80, 110]
+
+    newa_grid1 = NEWAGridTimeseries.from_zarr(
+        wt_x, wt_y, h, start='2020-04-01', stop='2020-04-01T23:30', zarr_path=zarr_file)
+
+    ds1 = newa_grid1.to_pywake()
+
+    x, y = to_newa_crs(wt_x, wt_y, crs='epsg:25832')
+    if 0:
+        ds1.WS[:, :, 0, 0].plot()
+        plt.plot(x, y, '2r')
+        plt.show()
+    assert ds1.x.min() < x.min() and ds1.x.max() > x.max() and ds1.y.min() < y.min() and ds1.y.max() > y.max()
+    try:
+        newa_grid2 = NEWAGridTimeseries.from_web(x, y, h, start='2020-04-01', stop='2020-04-01T23:30')
+    except urllib.error.HTTPError as e:
+        warnings.warn(f"Web request failed with error {e}. Skipping test_NEWAGridTimeseries_compare_zarr_web.")
+        return
+    ds2 = newa_grid2.to_pywake()
+
+    npt.assert_allclose(ds1.WS.sel(h=75), ds2.WS.sel(h=75))
+
+
 def test_NEWAPointTimeseries_compare_zarr_web(zarr_file):
 
     x, y, h = np.median(wt_x), np.median(wt_y), [70, 80, 110]
@@ -43,7 +76,8 @@ def test_NEWAPointTimeseries_compare_zarr_web(zarr_file):
     ds1 = newa_pts1.to_pywake()
     try:
         newa_pts2 = NEWAPointTimeseries.from_web(x, y, h, start='2020-04-01', stop='2020-04-01T23:30')
-    except urllib.error.HTTPError:
+    except urllib.error.HTTPError as e:
+        warnings.warn(f"Web request failed with error {e}. Skipping test_NEWAGridTimeseries_compare_zarr_web.")
         return
     ds2 = newa_pts2.to_pywake()
 

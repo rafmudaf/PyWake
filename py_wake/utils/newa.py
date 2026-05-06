@@ -11,12 +11,57 @@ from tqdm.auto import tqdm
 from py_wake.site.xrsite import XRSite
 from _datetime import timezone
 
+newa_crs = "+proj=lcc +lat_0=54 +lon_0=15 +lat_1=30 +lat_2=60 +x_0=0 +y_0=0 +R=6370000 +units=m +no_defs +type=crs"
+
 
 def get_newa_point(x, y, h, crs):
     p = wk.spatial.create_dataset(x, y, 1, crs=crs)
     newa_heights = np.array([50., 75., 100., 150., 200., 250., 500.])
     h_lst = newa_heights[np.arange(*np.searchsorted(newa_heights, [np.min(h), np.max(h)]) + [-1, 1])]
     return p, h_lst
+
+
+def reproject(x, y, from_crs, to_crs):
+    """Converts position to new crs
+
+    Often used crs:
+    - 'EPSG:4326' for WGS 84 longitude/latitude (degrees)
+    - 'EPSG:25832' for UTM zone 32N (m), Europe between 6°E and 12°E and approximately 36°30'N to 84°N.
+    - '+proj=lcc +lat_0=54 +lon_0=15 +lat_1=30 +lat_2=60 +x_0=0 +y_0=0 +R=6370000 +units=m +no_defs +type=crs' for NEWA coordinates (m)
+
+    Parameters
+    ----------
+    x : number or array_like
+        x position / longitude
+    y : number or array_like
+        y position / latitude
+    from_crs : str
+        Coordinate reference system of the input coordinates
+    to_crs : str
+        Coordinate reference system of the output coordinates
+
+    """
+
+    p = wk.spatial.create_dataset(x, y, 1, crs=from_crs)
+    p = wk.spatial.reproject(p, to_crs)
+    return p.west_east.values, p.south_north.values
+
+
+def to_newa_crs(x, y, crs):
+    """Converts position to coordinates compatible with NEWA
+
+    Parameters
+    ----------
+    x : number or array_like
+        x position / longitude
+    y : number or array_like
+        y position / latitude
+    crs : str
+        Coordinate reference system of the input coordinates, e.g.
+        - 'EPSG:4326' for WGS 84 longitude/latitude (degrees)
+        - 'EPSG:25832' for UTM zone 32N (m), Europe between 6°E and 12°E and approximately 36°30'N to 84°N.
+    """
+    return reproject(x, y, from_crs=crs, to_crs=newa_crs)
 
 
 def wk2pywake(ds, TI=None, variable_lst=['WD', 'WS', 'TI']):
@@ -31,7 +76,7 @@ def wk2pywake(ds, TI=None, variable_lst=['WD', 'WS', 'TI']):
     return ds.transpose(*dims)
 
 
-class NEWAPointTimeseries():
+class NEWAGridTimeseries():
     def __init__(self, ds):
         self.ds = ds
 
@@ -66,6 +111,49 @@ class NEWAPointTimeseries():
         return t_lst, [ds_height.isel(time=(ds_height.time.values >= t0) & (
             ds_height.time.values < t1)) for t0, t1 in zip(t_lst[:-1], t_lst[1:])]
 
+    @classmethod
+    def from_web(cls, x, y, h, start='2002-01-01', stop='2002-01-01T23:30',
+                 crs='EPSG:25832'):  # pragma: no cover
+        p, h_lst = get_newa_point(x, y, h, crs)
+        p = wk.spatial.reproject(p, "EPSG:4326")
+        lon, lat = p['west_east'].values, p['south_north'].values
+
+        height = "&".join([f"height={int(h)}" for h in h_lst])
+        if stop is not None:
+            stop = f'&dt_stop={stop.replace(":", "%3A")}'
+        else:
+            stop = ''
+        start = start.replace(":", "%3A")
+        var_lst = ['WS', 'WD', 'TI', 'RMOL', 'RHO']
+        var_str = "&".join([f'variable={v.replace("TI", "TKE")}' for v in var_lst])
+        url = 'https://wps.neweuropeanwindatlas.eu/api/mesoscale-ts/v1/'
+        if len(lon) == len(lat) == 1:
+            url += f'get-data-point?latitude={lat[0]:.8f}&longitude={lon[0]:.8f}'
+        else:
+            url += f'get-data-bbox?southBoundLatitude={lat.min():.8f}&northBoundLatitude{lat.min():.8f}&westBoundLongitude={lon.min():.8f}eastBoundLongitude={lon.max():.8f}'
+        url += f'&{height}&{var_str}&dt_start={start}{stop}'
+        f, msg = urllib.request.urlretrieve(url)
+        ds = xr.open_dataset(f)
+        return cls(ds)
+
+    @staticmethod
+    def from_grid_dataset(ds, x, y, h, start=None, stop=None, crs='EPSG:25832'):
+        p, h_lst = get_newa_point(x, y, h, crs)
+        p = wk.spatial.reproject(p, newa_crs)
+        ds = ds.sel(height=h_lst, time=slice(start, stop))
+        we_slice = slice(*np.searchsorted(ds.west_east, [p.west_east.min(), p.west_east.max()]) + [-1, 1])
+        sn_slice = slice(*np.searchsorted(ds.south_north, [p.south_north.min(), p.south_north.max()]) + [-1, 1])
+        ds = ds.isel(west_east=we_slice, south_north=sn_slice)
+        return NEWAGridTimeseries(ds)
+
+    @classmethod
+    def from_zarr(cls, x, y, h, start='2002-01-01', stop='2002-01-01T23:30',
+                  crs='EPSG:25832', zarr_path=None):
+        ds = xr.open_zarr(zarr_path, consolidated=False)
+        return cls.from_grid_dataset(ds, x, y, h, start=start, stop=stop, crs=crs)
+
+
+class NEWAPointTimeseries(NEWAGridTimeseries):
     def add_P(self, time_step, height, wd=np.arange(360), ws=np.arange(3, 26)):
         dwd = np.diff(wd[:2])[0]
         assert np.all(dwd == np.diff(wd))
@@ -146,33 +234,6 @@ class NEWAPointTimeseries():
         res = ((power * self.ds.P).sum(dims) * 1e-9 * hours).values
         time_step = self.ds.hours.dims[0]
         return xr.DataArray(res, dims=time_step, coords={time_step: self.ds[time_step].values})
-
-    @staticmethod
-    def from_web(x, y, h, start='2002-01-01', stop='2002-01-01T23:30',
-                 crs='EPSG:25832'):  # pragma: no cover
-        p, h_lst = get_newa_point(x, y, h, crs)
-        p = wk.spatial.reproject(p, "EPSG:4326")
-        lon, lat = p['west_east'].item(), p['south_north'].item()
-
-        height = "&".join([f"height={int(h)}" for h in h_lst])
-        if stop is not None:
-            stop = f'&dt_stop={stop.replace(":", "%3A")}'
-        else:
-            stop = ''
-        start = start.replace(":", "%3A")
-        var_lst = ['WS', 'WD', 'TI', 'RMOL', 'RHO']
-        var_str = "&".join([f'variable={v.replace("TI", "TKE")}' for v in var_lst])
-        var_str = "variable=RMOL&variable=ZNT&variable=RHO&variable=WD&variable=TKE&variable=WS"
-        url = f'https://wps.neweuropeanwindatlas.eu/api/mesoscale-ts/v1/get-data-point?latitude={lat:.8f}&longitude={lon:.8f}&{height}&{var_str}&dt_start={start}{stop}'
-        f, msg = urllib.request.urlretrieve(url)
-        ds = xr.open_dataset(f)
-        return NEWAPointTimeseries(ds)
-
-    @staticmethod
-    def from_zarr(x, y, h, start='2002-01-01', stop='2002-01-01T23:30',
-                  crs='EPSG:25832', zarr_path=None):
-        ds = xr.open_zarr(zarr_path, consolidated=False)
-        return NEWAPointTimeseries.from_grid_dataset(ds, x, y, h, start=start, stop=stop, crs=crs)
 
     @staticmethod
     def from_grid_dataset(ds, x, y, h, start=None, stop=None, crs='EPSG:25832'):
