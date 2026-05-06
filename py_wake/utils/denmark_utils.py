@@ -11,6 +11,7 @@ from py_wake.utils.maps import dk_coast
 from py_wake.utils.plotting import setup_plot
 from py_wake.wind_turbines._wind_turbines import WindTurbines
 from py_wake.wind_turbines.generic_wind_turbines import GenericWindTurbine
+from py_wake.tests import ptf
 
 xl = 'X (øst) koordinat UTM 32 Euref89'
 yl = 'Y (nord) koordinat UTM 32 Euref89'
@@ -108,20 +109,24 @@ class DKWindTurbines():
     def get_production(self, update_cache=False):
         folder = Path(__file__).parent
         f = folder / 'dk_wind_farm_production.nc'
-        if update_cache or not f.exists():
-            urllib.request.urlretrieve("https://ens.dk/media/3533/download", 'production.xlsx')
-            df_production = pd.read_excel(
-                'production.xlsx', sheet_name=None, header=8, dtype={
-                    'Møllenummer (identikationsnummer)': str})
-            for k, df in df_production.items():
-                df_production[k].columns = ['id', 'start', 'end', 'jan', 'feb', 'mar',
-                                            'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'total']
-                df_production[k].drop_duplicates(subset=['id'], keep='first', inplace=True)
-            da = xr.concat([xr.DataArray(df.iloc[:, 3:-1].values, dims=('id', 'time'),
-                                         coords={'id': df['id'].values.astype(str),
-                                                 'time': pd.to_datetime([f"{k[11:]}-{month}" for month in range(1, 13)])})
-                            for k, df in df_production.items()], dim='time', join='outer')
 
+        if update_cache or not f.exists():
+            da = xr.open_dataarray(ptf('dk_data/dk_wind_farm_production.nc',
+                                       known_hash='f98583dcb51f67dd4034ad783249ecf8c759d6cc574fab312700e82d04abb255'))
+            # The monthly production is temporary not available 05/2026
+            # urllib.request.urlretrieve("https://ens.dk/media/3533/download", 'production.xlsx')
+            # df_production = pd.read_excel(
+            #     'production.xlsx', sheet_name=None, header=8, dtype={
+            #         'Møllenummer (identikationsnummer)': str})
+            # for k, df in df_production.items():
+            #     df_production[k].columns = ['id', 'start', 'end', 'jan', 'feb', 'mar',
+            #                                 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'total']
+            #     df_production[k].drop_duplicates(subset=['id'], keep='first', inplace=True)
+            # da = xr.concat([xr.DataArray(df.iloc[:, 3:-1].values, dims=('id', 'time'),
+            #                              coords={'id': df['id'].values.astype(str),
+            #                                      'time': pd.to_datetime([f"{k[11:]}-{month}" for month in range(1, 13)])})
+            #                 for k, df in df_production.items()], dim='time', join='outer')
+            #
             da.to_netcdf(f)
         else:
             da = xr.load_dataarray(f)
@@ -132,22 +137,3 @@ class DKWindTurbines():
         wf = DKWindTurbines()
         wf.set_filter(**wf.wf_filters[name])
         return wf
-
-
-def main():
-    if __name__ == '__main__':
-        dk_wt = DKWindTurbines()
-        dk_wt.set_filter(xlim=(690000, 700000), ylim=(6170000, 6180000))
-        dk_wt.plot()
-        wt, type, (x, y), wt_id = dk_wt.get_WindTurbines()
-        m = [6, 8, 10, 11, 12]
-        wt.plot(x[m], y[m], type=type[m])
-        plt.legend()
-        print(dk_wt().iloc[8, :15])
-        plt.figure()
-        dk_wt.get_production(update_cache=0).sel(id=wt_id[8]).plot(label=dk_wt()['Typebetegnelse'].iloc[8])
-        plt.legend()
-        plt.show()
-
-
-main()

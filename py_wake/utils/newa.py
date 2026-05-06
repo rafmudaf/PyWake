@@ -172,7 +172,6 @@ class NEWAPointTimeseries():
     def from_zarr(x, y, h, start='2002-01-01', stop='2002-01-01T23:30',
                   crs='EPSG:25832', zarr_path=None):
         ds = xr.open_zarr(zarr_path, consolidated=False)
-        p, h_lst = get_newa_point(x, y, h, crs)
         return NEWAPointTimeseries.from_grid_dataset(ds, x, y, h, start=start, stop=stop, crs=crs)
 
     @staticmethod
