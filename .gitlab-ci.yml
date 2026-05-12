@@ -12,7 +12,7 @@ test_PyWake:  # name the job what we like
     test 
   script:
   - mamba install python==3.12
-  - mamba install tensorflow windkit -c https://conda.windenergy.dtu.dk/channel/open/ -c conda-forge
+  - mamba install sqlite==3.53.1 tensorflow windkit -c https://conda.windenergy.dtu.dk/channel/open/ -c conda-forge
   - pip install --upgrade pip
   - pip install -e .[test]
   - python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
