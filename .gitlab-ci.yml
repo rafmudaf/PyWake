@@ -1,24 +1,39 @@
-image: condaforge/miniforge3:latest
- 
+default:
+  image:
+    name: condaforge/miniforge3:latest
+    pull_policy: if-not-present
+
+variables:
+  PIXI_VERSION: v0.68.1
+
 stages:
   - test
   - test_plugins
   - build
   - deploy
 
+.install_pixi_linux: &install_pixi_linux
+  - apt-get update
+  - apt-get -qq -y install curl
+  - curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION=$PIXI_VERSION bash
+  - export PATH="/root/.pixi/bin:$PATH"
+
+.install_pixi_windows: &install_pixi_windows
+  - $env:PIXI_VERSION=$PIXI_VERSION
+  - powershell -ExecutionPolicy Bypass -c "irm -useb https://pixi.sh/install.ps1 | iex"
+  - $env:Path += ';C:\Users\ContainerAdministrator\.pixi\bin'
+
 # ===== TEST PyWake debian=====
 test_PyWake:  # name the job what we like
   stage:  # build, test, deploy defined by default [2]
     test 
+  before_script:
+  - *install_pixi_linux
   script:
-  - mamba install python==3.12
-  - mamba install sqlite==3.53.1 tensorflow windkit -c https://conda.windenergy.dtu.dk/channel/open/ -c conda-forge
-  - pip install --upgrade pip
-  - pip install -e .[test]
-  - python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
-  - python -V
-  - pip list
-  - pytest --durations=10
+  - pixi install --environment test  # --locked
+  - pixi run --environment test --as-is python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
+  - pixi run --environment test --as-is python -V
+  - pixi run --environment test --as-is pytest --durations=10
   tags:  # only runners with this tag can do the job [3]
   - ci-ubuntu
   rules:
@@ -29,13 +44,12 @@ test_PyWake:  # name the job what we like
 test_PyWake_MPI:  # name the job what we like
   stage:  # build, test, deploy defined by default [2]
     test
+  before_script:
+  - *install_pixi_linux
   script:
-  - pip install --upgrade pip
-  - pip install -e . --timeout 100 --resume-retries 3
-  - pip install mpi4py openmpi
-  - python -V
-  - pip list
-  - mpirun --allow-run-as-root -np 2 python py_wake/tests/test_utils/test_mpi.py
+  - pixi install --environment parallel  # --locked
+  - pixi run --environment parallel --as-is python -V
+  - pixi run --environment parallel --as-is mpirun --allow-run-as-root -np 2 python py_wake/tests/test_utils/test_mpi.py
   tags:  # only runners with this tag can do the job [3]
   - ci-ubuntu
   rules:
@@ -46,10 +60,11 @@ test_PyWake_MPI:  # name the job what we like
 check_code_style:  # name the job what we like
   stage:  # build, test, deploy defined by default [2]
     test
+  before_script:
+  - *install_pixi_linux
   script:
-  - pip install pycodestyle
-  - pip install -e . --user
-  - pycodestyle --ignore=E501,W504,E741 py_wake
+  - pixi install --environment lint  # --locked
+  - pixi run --environment lint --as-is pycodestyle --ignore=E501,W504,E741 py_wake
   tags:  # only runners with this tag can do the job [3]
   - ci-ubuntu
   rules:
@@ -61,13 +76,13 @@ test_PyWake_windows:  # name the job what we like
   stage:  # build, test, deploy defined by default [2]
     test
   image: registry.windenergy.dtu.dk/dockerimages/windows-python:ltsc2019_py312
+  before_script:
+  - *install_pixi_windows
   script:  # runs on windows machine due to tag below
-  - pip install -e .[test]
-  - pip install pip-system-certs # to avoid [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate
-  - python -c "import os; from pathlib import Path; p=Path(os.getenv('APPDATA'))/'DTU Wind Energy/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
-  - python -V
-  - pip list
-  - pytest --durations=10 --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=py_wake --cov-config .coveragerc
+  - pixi install --environment test  # --locked
+  - pixi run --environment test --as-is python -c "import os; from pathlib import Path; p=Path(os.getenv('APPDATA'))/'DTU Wind Energy/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
+  - pixi run --environment test --as-is python -V
+  - pixi run --environment test --as-is pytest --durations=10 --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=py_wake --cov-config .coveragerc
   tags:  # tag for shared runner on windows machine
   - docker-windows
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
@@ -134,14 +149,15 @@ trigger_hub_test:
 build_pages:  # "pages" is a job specifically for GitLab pages [1]
   stage:  # build, test, deploy defined by default [2]
     test
+  before_script:
+  - *install_pixi_linux
   script:  # use sphinx to build docs, move to public page
   - apt-get update
-  - apt-get -y install make pandoc graphviz
-  - pip install --upgrade pip
-  - pip install -e .[test,docs]
-  - python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
+  - apt-get -y install pandoc graphviz
+  - pixi install --environment docs  # --locked
+  - pixi run --environment docs --as-is python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
   - cd docs/validation_report
-  - python generate_validation_figures.py
+  - pixi run --environment docs --as-is python generate_validation_figures.py
   - cd report
   - apt-get install -y texlive-latex-extra
   - pdflatex validation_report.tex
@@ -150,7 +166,7 @@ build_pages:  # "pages" is a job specifically for GitLab pages [1]
   - pdflatex validation_report.tex
   - cd ../../
   - pwd
-  - make html
+  - pixi run --environment docs --as-is sphinx-build . build
   #- make latexpdf
   - cd ../
   artifacts:  # required for GitLab pages [1]

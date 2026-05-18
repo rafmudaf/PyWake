@@ -50,11 +50,12 @@ test  = [ 'pytest',  # for testing
           'line_profiler',  # to check speed
           'scikit-learn',  # MinMaxScaler
           'surrogates-interface',
-          'tensorflow',  # load surrogates
+          "tensorflow>=2.0; python_version<'3.14'",  # load surrogates
           'ipywidgets',  # notebook widgets
           'windkit',
           'zarr',
           'geopandas',
+          'pip-system-certs',  # to avoid [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate
         ] 
 docs = [
           'sphinx',  # generating documentation
@@ -71,6 +72,15 @@ docs = [
           'windkit',
           'geopandas',
         ]
+
+lint = [
+  "pycodestyle",
+]
+
+parallel = [
+  "mpi4py",
+  "openmpi",
+]
 
 [tool.setuptools]
 include-package-data = false
@@ -105,5 +115,24 @@ preview = true
 [tool.ruff.lint.pycodestyle]
 max-line-length = 150
 
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64"]  # "osx-arm64"
+requires-pixi = ">=0.67"  # For exclude-newer.
+exclude-newer = "1month"  # For safety.
 
+[tool.pixi.pypi-dependencies]
+py_wake = { path = ".", editable = true }
 
+[tool.pixi.feature.test.dependencies]
+python = "3.12.*"  # This is the python version that we use for testing.
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+docs = { features = ["docs", "test"], solve-group = "default" }
+lint = { features = ["lint"], solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+parallel = { features = ["parallel"], solve-group = "default" }
+dev = { features = ["docs", "test", "lint"], solve-group = "default" }
+
+[tool.pixi.tasks]
