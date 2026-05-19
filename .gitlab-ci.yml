@@ -166,7 +166,7 @@ build_pages:  # "pages" is a job specifically for GitLab pages [1]
   - pdflatex validation_report.tex
   - cd ../../
   - pwd
-  - pixi run --environment docs --as-is sphinx-build . build
+  - pixi run --environment docs --as-is sphinx-build -M html . build
   #- make latexpdf
   - cd ../
   artifacts:  # required for GitLab pages [1]
