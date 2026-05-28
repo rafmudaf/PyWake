@@ -237,6 +237,21 @@ def test_autograd_wrt_xy():
     npt.assert_array_equal(dfdxy, np.array([ref_x, ref_y]))
 
 
+def test_autograd_multivector_wrt_xy():
+    def f(x, y, z):
+        return np.array([x**2 + 2 * y**3 + z, x**2 + 2 * y**3 + z])
+
+    x = np.array([2, 3, 4])
+    y = np.array([1, 2, 3])
+
+    dfdxy = autograd(f, vector_interdependence=True, argnum=[0, 1])(x, y=y, z=1)
+    assert np.shape(dfdxy) == (2,  # xy
+                               2, 3,  # f output shape
+                               3)  # x/y shape
+
+    npt.assert_array_almost_equal(dfdxy, cs(f, vector_interdependence=True, argnum=[0, 1])(x, y=y, z=1))
+
+
 def test_gradients():
     wt = IEA37_WindTurbines()
     ws_lst = np.arange(3, 25, .1)

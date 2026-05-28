@@ -205,7 +205,9 @@ def autograd(f, vector_interdependence=True, argnum=0):
                 return f(*args, **kwargs)
             wrap_1inp.org_f = f
             dfdinp = autograd(wrap_1inp, vector_interdependence=vector_interdependence)(wrt_1arg, *args)
-            return [dfdinp[i0:i1].reshape(s) for i0, i1, s in zip(wrt_arg_i[:-1], wrt_arg_i[1:], wrt_arg_shape)]
+            output_shape = np.shape(dfdinp)[:-1]
+            return [dfdinp[..., i0:i1].reshape(output_shape + s)
+                    for i0, i1, s in zip(wrt_arg_i[:-1], wrt_arg_i[1:], wrt_arg_shape)]
         return wrap
     else:
         if vector_interdependence:
