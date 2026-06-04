@@ -4,7 +4,7 @@ import pytest
 
 from py_wake import np
 from py_wake.tests import clear_ptf, ptf
-from py_wake.utils.check_input import check_input
+from py_wake.utils.check_input import check_input, is_list_like
 import time
 
 
@@ -34,3 +34,12 @@ def test_ptf():
             time.sleep(0.5)
     assert f.exists() is False
     assert f.parent.exists() is False
+
+
+def test_is_list_like():
+    assert is_list_like([1, 2])
+    assert is_list_like((1, 2))
+    assert is_list_like({1, 2})
+    assert not is_list_like("abc")
+    assert not is_list_like(bytes("abc", "utf-8"))
+    assert not is_list_like({"a": 1})

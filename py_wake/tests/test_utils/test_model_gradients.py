@@ -15,7 +15,6 @@ from py_wake.deficit_models.no_wake import NoWakeDeficit
 from py_wake.deficit_models.noj import NOJDeficit
 from py_wake.deflection_models.deflection_model import DeflectionModel
 from py_wake.examples.data.hornsrev1 import V80, Hornsrev1Site
-from py_wake.examples.data.iea34_130rwt._iea34_130rwt import IEA34_130_1WT_Surrogate
 from py_wake.examples.data.iea37._iea37 import (
     IEA37_WindTurbines,
     IEA37Site,
@@ -26,7 +25,7 @@ from py_wake.ground_models.ground_models import GroundModel
 from py_wake.rotor_avg_models.area_overlap_model import AreaOverlapAvgModel
 from py_wake.rotor_avg_models.rotor_avg_model import RotorAvgModel
 from py_wake.site.distance import StraightDistance
-from py_wake.site.shear import LogShear, MOSTShear, PowerShear, Shear
+from py_wake.site.shear import LLJRiemer, LogShear, MOSTShear, PowerShear, Shear
 from py_wake.site.streamline_distance import StreamlineDistance
 from py_wake.site.xrsite import XRSite
 from py_wake.superposition_models import (
@@ -34,7 +33,6 @@ from py_wake.superposition_models import (
     SuperpositionModel,
 )
 from py_wake.tests import npt
-from py_wake.tests.test_verification.test_turbopark import kwargs
 from py_wake.turbulence_models.stf import STF2005TurbulenceModel, STF2017TurbulenceModel
 from py_wake.turbulence_models.turbulence_model import TurbulenceModel
 from py_wake.utils import gradients
@@ -237,18 +235,26 @@ def test_sites(site):
     )
 
 
-@pytest.mark.parametrize('model', get_models(Shear))
+@pytest.mark.parametrize(
+    "model",
+    [
+        PowerShear(h_ref=100, alpha=0.1),
+        LogShear(h_ref=100, z0=0.03),
+        MOSTShear(h_ref=100, z0=0.03, h_zeta=0.0),
+        LLJRiemer(strength=2.0, width=100.0, h_ref=400.0),
+        LLJRiemer(strength=2.0, width=100.0, h_ref=400.0, wsp_ref=8.0),
+    ],
+)
 def test_shear(model):
-    if model is not None:
-        model = {PowerShear: PowerShear(h_ref=100, alpha=.1),
-                 LogShear: LogShear(h_ref=100, z0=.03),
-                 MOSTShear: MOSTShear(h_ref=100, z0=.03, h_zeta=0.0)}[model]
-        check_gradients(lambda site, wt, s=Hornsrev1Site(shear=model): PropagateDownwind(
-            s, wt, wake_deficitModel=BastankhahGaussianDeficit(),
+    check_gradients(
+        lambda site, wt, s=Hornsrev1Site(shear=model): PropagateDownwind(
+            s,
+            wt,
+            wake_deficitModel=BastankhahGaussianDeficit(),
         ),
-            model.__class__.__name__,
-            wt_h=[100, 100, 100]
-        )
+        model.__class__.__name__,
+        wt_h=[100, 100, 100],
+    )
 
 
 @pytest.mark.parametrize('model', get_models(StraightDistance))
@@ -299,3 +305,8 @@ def test_output(output):
 
 def test_overlapping_area_factor():
     check_gradients(lambda site, wt: PropagateDownwind(site, wt, NOJDeficit()), name='partial wake', wt_y=[0, 200, 200])
+
+
+if __name__ == "__main__":
+    # pytest.main([__file__])
+    pytest.main([__file__, "-k test_shear"])

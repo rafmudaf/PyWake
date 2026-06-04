@@ -532,8 +532,7 @@ def test_IJLK():
 
 
 def test_wd_dependent_dst():
-    wfm = IEA37CaseStudy1(16)
-    wfm.site.shear = PowerShear()
+    wfm = IEA37CaseStudy1(16, shear=PowerShear())
     x, y = wfm.site.initial_position.T
     sim_res = wfm(x, y, wd=np.arange(360), ws=np.arange(3, 25))
 
