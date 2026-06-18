@@ -74,25 +74,23 @@ def test_speed_mem():
     if os.name == 'posix':
         pytest.xfail("Memory tests behave differently on Linux")
 
-    def f(x):
-        y = x**2
-        time.sleep(.01)
-        return y.sum()
+    def f(N):
+        x = np.arange(N) * np.arange(1024**2 / 8)[:, na]
+        x += 1
+        return x.nbytes / 1024**2, x.dtype, x.sum()
 
-    N = 1000
-    x = np.arange(N, dtype=float) * np.arange(1024**2 / 8)[:, na] + 1
-
-    t64, mem64 = profileit(f)(x)[1:]
-
+    N = 100
     with Numpy32():
-        x = np.asarray(x)
-        t32, mem32 = profileit(f)(x)[1:]
+        r32, t32, mem32 = profileit(f)(N)
 
-    print(t32, t64)
-    print(mem32, mem64)
-
+    r64, t64, mem64 = profileit(f)(N)
+    assert r64[:2] == (100, np.float64)
+    assert r32[:2] == (50, np.float32)
+    npt.assert_allclose(r64[2], np.float64(r32[2]), rtol=1e-5)
+    npt.assert_allclose([mem32, mem64], [50, 100], atol=10)
     assert t32 / t64 < .6
     assert mem32 / mem64 < .6  # should be 500/1000
+
 
 # def test_speed():
 #     site = Hornsrev1Site()
