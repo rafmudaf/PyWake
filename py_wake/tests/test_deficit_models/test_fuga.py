@@ -1,5 +1,6 @@
 import contextlib
 import io
+import shutil
 import warnings
 from pathlib import Path
 
@@ -112,13 +113,14 @@ def test_fuga_blockage_wt_row():
         plt.show()
 
 
-def test_fuga_new_casedata_bin_format():
+def test_fuga_new_casedata_bin_format(tmp_path):
     # move turbine 1 600 300
     wt_x = [-250, 600, -500, 0, 500, -250, 250]
     wt_y = [433, 300, 0, 0, 0, -433, -433]
     wts = HornsrevV80()
 
-    path = tfp + 'fuga/2MW/Z0=0.00408599Zi=00400Zeta0=0.00E+00/'
+    source = Path(tfp) / 'fuga/2MW/Z0=0.00408599Zi=00400Zeta0=0.00E+00'
+    path = str(shutil.copytree(source, tmp_path / source.name))
     site = UniformSite([1, 0, 0, 0], ti=0.075)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', DeprecationWarning)

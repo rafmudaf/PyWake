@@ -182,10 +182,11 @@ except ModuleNotFoundError:
             raise Exception("""pip install header was not present in %s.
 It has now been auto insert. Please check the notebook and commit the changes""" % os.path.abspath(self.filename))
 
-    def remove_empty_end_cell(self):
+    def remove_empty_end_cell(self, save=True):
         while self.cells[-1]['cell_type'] == 'code' and all([l.strip() == "" for l in self.cells[-1]['source']]):
             self.nb['cells'] = self.cells[:-1]
-            self.save()
+            if save:
+                self.save()
 
 
 if __name__ == '__main__':

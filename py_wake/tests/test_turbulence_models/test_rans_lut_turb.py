@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pytest
 from py_wake import np
 from py_wake.deficit_models.rans_lut import RANSLUTDemoDeficit
 from py_wake.examples.data.hornsrev1 import HornsrevV80
@@ -11,6 +12,7 @@ from py_wake.utils.profiling import timeit
 from py_wake.wind_farm_models.engineering_models import All2AllIterative
 
 
+@pytest.mark.slow
 def test_rans_lut_turb():
     # move turbine 1 600 300
     wt_x = [-250, 600, -500, 0, 500, -250, 250]

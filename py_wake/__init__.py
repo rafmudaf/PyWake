@@ -11,19 +11,19 @@ from py_wake.utils.numpy_utils import NumpyWrapper
 np = numpy
 locals()['np'] = NumpyWrapper()
 
-from py_wake.deficit_models.deficit_model import DeficitModel  # nopep8
-from py_wake.deficit_models.fuga import Fuga, FugaBlockage  # nopep8
-from py_wake.deficit_models.gaussian import (  # nopep8
+from py_wake.deficit_models.deficit_model import DeficitModel  # noqa: E402
+from py_wake.deficit_models.fuga import Fuga, FugaBlockage  # noqa: E402
+from py_wake.deficit_models.gaussian import (  # noqa: E402
     BastankhahGaussian,
-    IEA37SimpleBastankhahGaussian,  # nopep8
+    IEA37SimpleBastankhahGaussian,
     NiayifarGaussian,
     ZongGaussian,
 )
-from py_wake.deficit_models.gcl import GCL, GCLLocal  # nopep8
-from py_wake.deficit_models.noj import NOJ, NOJLocal  # nopep8
-from py_wake.flow_map import HorizontalGrid, XYGrid, XZGrid, YZGrid  # nopep8
-from py_wake.literature.turbopark import Nygaard_2022  # nopep8
-from py_wake.wind_farm_models.wind_farm_model import WindFarmModel  # nopep8
+from py_wake.deficit_models.gcl import GCL, GCLLocal  # noqa: E402
+from py_wake.deficit_models.noj import NOJ, NOJLocal  # noqa: E402
+from py_wake.flow_map import HorizontalGrid, XYGrid, XZGrid, YZGrid  # noqa: E402
+from py_wake.literature.turbopark import Nygaard_2022  # noqa: E402
+from py_wake.wind_farm_models.wind_farm_model import WindFarmModel  # noqa: E402
 
 try:  # pragma: no cover
     # version.py created when installing py_wake

@@ -1,4 +1,5 @@
 import os
+import sys
 import warnings
 from pathlib import Path
 
@@ -7,6 +8,8 @@ import xarray
 
 import py_wake
 from py_wake.flow_map import Grid
+import py_wake.tests.notebook as notebook_module
+import py_wake.tests.test_files as test_files_module
 from py_wake.tests.notebook import Notebook
 
 
@@ -18,14 +21,25 @@ def get_notebooks():
 
 
 notebooks = get_notebooks()
+slow_notebooks = {'Shadow.ipynb', 'Site.ipynb', 'ExternalWindFarms.ipynb'}
 
 
-@pytest.mark.parametrize("notebook", notebooks, ids=[os.path.basename(nb.filename) for nb in notebooks])
-def test_notebooks(notebook):
+@pytest.mark.parametrize(
+    "notebook",
+    [pytest.param(nb, marks=pytest.mark.slow) if os.path.basename(nb.filename) in slow_notebooks else nb
+     for nb in notebooks],
+    ids=[os.path.basename(nb.filename) for nb in notebooks])
+def test_notebooks(notebook, tmp_path, monkeypatch):
     import matplotlib.pyplot as plt
     if (str(Path(notebook.filename).relative_to(os.path.dirname(py_wake.__file__) + "/../docs/notebooks/")) in
             ['Optimization.ipynb']):
         return
+
+    monkeypatch.chdir(tmp_path)
+    notebook_module.tfp = str(tmp_path) + '/'
+    monkeypatch.setattr(test_files_module, '__path__', [str(tmp_path)])
+    if 'py_wake.tests.test_files.tmp' in sys.modules:
+        sys.modules['py_wake.tests.test_files.tmp'].__path__ = [str(tmp_path / 'tmp')]
 
     def no_show(*args, **kwargs):
         pass
@@ -48,7 +62,6 @@ def test_notebooks(notebook):
             warnings.filterwarnings('ignore', 'The .* model is not representative of the setup used in the literature')
             notebook.check_code()
         notebook.check_links()
-        notebook.remove_empty_end_cell()
         # notebook.check_pip_header()
     except Exception as e:
         raise Exception(notebook.filename + " failed") from e
@@ -60,7 +73,10 @@ def test_notebooks(notebook):
 
 
 if __name__ == '__main__':
+    from tempfile import TemporaryDirectory
+
     # print("\n".join([f.filename for f in get_notebooks()]))
     path = os.path.dirname(py_wake.__file__) + "/../docs/notebooks/"
     f = 'RotorAverageModels.ipynb'
-    test_notebooks(Notebook(path + f))
+    with TemporaryDirectory() as tmp_dir, pytest.MonkeyPatch.context() as monkeypatch:
+        test_notebooks(Notebook(path + f), Path(tmp_dir), monkeypatch)

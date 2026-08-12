@@ -1,4 +1,4 @@
-import os
+import tempfile
 import urllib.request
 from pathlib import Path
 
@@ -17,9 +17,17 @@ xl = 'X (øst) koordinat UTM 32 Euref89'
 yl = 'Y (nord) koordinat UTM 32 Euref89'
 
 
+def _cache_folder():
+    # Runtime data must live outside site-packages, which can be read-only in
+    # system-wide, containerized, and other managed installations.
+    folder = Path(tempfile.gettempdir()) / 'py_wake'
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
 class DKWindTurbines():
     def __init__(self, update_cache=False):
-        folder = Path(__file__).parent
+        folder = _cache_folder()
         f = folder / 'dk_turbines.h5'
         if update_cache or not f.exists():
             urllib.request.urlretrieve("https://ens.dk/media/3531/download", folder / 'dk_turbines.xlsx')
@@ -107,7 +115,7 @@ class DKWindTurbines():
         return WindTurbines.from_WindTurbine_lst(wt_lst), type, xy, wt_id
 
     def get_production(self, update_cache=False):
-        folder = Path(__file__).parent
+        folder = _cache_folder()
         f = folder / 'dk_wind_farm_production.nc'
 
         if update_cache or not f.exists():

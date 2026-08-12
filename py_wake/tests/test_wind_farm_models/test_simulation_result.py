@@ -2,23 +2,23 @@ from py_wake.deficit_models.noj import NOJ
 from py_wake.examples.data.iea37._iea37 import IEA37_WindTurbines
 from py_wake.site._site import UniformSite
 from py_wake.tests import npt
-from py_wake.tests.test_files import tfp
 from py_wake.wind_farm_models.wind_farm_model import SimulationResult
 import pytest
 
 
 @pytest.mark.parametrize('wd,ws,time', [(270, None, False),
                                         (270, 9, True)])
-def test_save_load(wd, ws, time):
+def test_save_load(wd, ws, time, tmp_path):
     site = UniformSite([1], ti=0)
     windTurbines = IEA37_WindTurbines()
     wfm = NOJ(site, windTurbines)
 
     sim_res1 = wfm([0], [0], wd=wd, ws=ws, time=time)
 
-    sim_res1.save(tfp + "tmp.nc")
+    filename = tmp_path / "simulation_result.nc"
+    sim_res1.save(filename)
 
-    sim_res2 = SimulationResult.load(tfp + 'tmp.nc', wfm)
+    sim_res2 = SimulationResult.load(filename, wfm)
     npt.assert_array_equal(sim_res1.aep(), sim_res2.aep())
 
 

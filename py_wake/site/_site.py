@@ -397,7 +397,7 @@ class Site(ABC):
         return P.T
 
 
-from py_wake.site import xrsite  # @NoMove # nopep8
+from py_wake.site import xrsite  # @NoMove  # noqa: E402
 
 UniformSite = xrsite.UniformSite
 UniformWeibullSite = xrsite.UniformWeibullSite

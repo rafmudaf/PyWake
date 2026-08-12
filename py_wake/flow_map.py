@@ -192,7 +192,12 @@ class FlowMap(FlowBox):
             c = ax.contourf(self.X / n, self.Y / n, data.squeeze().values, levels=levels, cmap=cmap,
                             )
             if plot_colorbar:
-                plt.colorbar(c, label=clabel, ax=ax, cax=cax)
+                # A colorbar must belong to the same figure as the plotted axes.
+                # Fall back to an axes-managed colorbar for stale or foreign cax.
+                if cax is not None and cax.figure is ax.figure:
+                    ax.figure.colorbar(c, label=clabel, cax=cax)
+                else:
+                    ax.figure.colorbar(c, label=clabel, ax=ax)
         else:
             raise NotImplementedError(
                 f"Plot not supported for FlowMaps based on Points. Use XYGrid, YZGrid or XZGrid instead")

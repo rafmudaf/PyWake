@@ -179,7 +179,9 @@ class XRSite(Site):
                 WS = self.interp(self.ds.Speedup, lw) * WS
 
         if self.shear:
-            assert 'h' in lw and np.all(lw.h != None), "Height must be specified and not None"  # nopep8
+            assert "h" in lw and np.all(
+                np.fromiter((_h is not None for _h in lw.h), dtype=bool)
+            ), "Height must be specified and not None"
             if isinstance(lw.h, ArrayBox):
                 h = lw.h
             else:

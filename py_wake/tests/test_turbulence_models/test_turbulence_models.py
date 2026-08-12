@@ -214,6 +214,7 @@ def test_turbulence_models_upstream(turbulenceModel):
         plt.show()
 
 
+@pytest.mark.slow
 def test_XRLUTTurbulenceModel():
     # setup site, turbines and wind farm model
     site = IEA37Site(16)

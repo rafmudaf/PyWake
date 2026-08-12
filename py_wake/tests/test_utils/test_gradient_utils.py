@@ -568,7 +568,8 @@ def test_isin():
         return np.sum(x[gradients.isin(x, y)])
 
     npt.assert_array_equal(autograd(f)(x), [0, 0, 1, 1, 0])
-    npt.assert_array_equal(autograd(g)([4., 5]), [0, 0])
+    with pytest.warns(UserWarning, match='Output seems independent of input'):
+        npt.assert_array_equal(autograd(g)([4., 5]), [0, 0])
 
 
 def test_floor():

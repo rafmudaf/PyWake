@@ -469,7 +469,8 @@ def test_EllipSysPolygonRotorAvgModel():
         plt.show()
 
     x, y = [0, 200], [0, 0]
-    wfm = BastankhahGaussian(UniformSite(), V80(), rotorAvgModel=EllipSysPolygonRotorAvg(n_r=4, n_theta=16))
+    with pytest.warns(UserWarning, match='not representative of the setup used in the literature'):
+        wfm = BastankhahGaussian(UniformSite(), V80(), rotorAvgModel=EllipSysPolygonRotorAvg(n_r=4, n_theta=16))
     # print(wfm(x, y, wd=270).WS_eff.sel(wt=1).squeeze())
     ws_eff_ref = 7.56579234
     npt.assert_almost_equal(wfm(x, y, wd=270).WS_eff.sel(wt=1).squeeze(), ws_eff_ref)

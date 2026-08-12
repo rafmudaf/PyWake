@@ -4,7 +4,7 @@ default:
     pull_policy: if-not-present
 
 variables:
-  PIXI_VERSION: v0.76.1
+  PIXI_VERSION: v0.76.2
 
 stages:
   - test
@@ -37,7 +37,7 @@ test_PyWake:  # name the job what we like
   - pixi install --environment test  # --locked
   - pixi run --environment test --as-is python -c "from pathlib import Path; p=Path.home()/'.config/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
   - pixi run --environment test --as-is python -V
-  - pixi run --environment test --as-is pytest --durations=10
+  - pixi run --environment test --as-is pytest --durations=10 -n 2
   tags:  # only runners with this tag can do the job [3]
   - ci-ubuntu
   rules:
@@ -68,7 +68,7 @@ check_code_style:  # name the job what we like
   - *install_pixi_linux
   script:
   - pixi install --environment lint  # --locked
-  - pixi run --environment lint --as-is pycodestyle --ignore=E501,W504,E741 py_wake
+  - pixi run --environment lint --as-is lint
   tags:  # only runners with this tag can do the job [3]
   - ci-ubuntu
   rules:
@@ -88,7 +88,7 @@ test_PyWake_windows:  # name the job what we like
   - pixi install --environment test  # --locked
   - pixi run --environment test --as-is python -c "import os; from pathlib import Path; p=Path(os.getenv('APPDATA'))/'DTU Wind Energy/windkit/windkit.ini'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('[user_data]\nname=test\nemail=test@dtu.dk\ninstitution=DTU Wind')"
   - pixi run --environment test --as-is python -V
-  - pixi run --environment test --as-is pytest --durations=10 --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=py_wake --cov-config .coveragerc
+  - pixi run --environment test --as-is pytest --durations=10 -n 2 --no-show --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=py_wake --cov-config .coveragerc
   tags:  # tag for shared runner on windows machine
   - docker-windows
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
@@ -224,7 +224,3 @@ pypi_linux:
     - twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
   tags:
   - ci-ubuntu
-
-
-
-

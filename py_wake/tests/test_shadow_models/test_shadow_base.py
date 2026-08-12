@@ -205,6 +205,7 @@ def test_plot_save_functionality(
     assert calendar_path.exists()
 
 
+@pytest.mark.slow
 def test_animation_save(sample_shadow_map_dataset, tmp_path):
     shadow_map = sample_shadow_map_dataset
     gif_path = tmp_path / "animation.gif"

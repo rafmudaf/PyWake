@@ -36,6 +36,13 @@ def site():
     return ParqueFicticioSite()
 
 
+@pytest.fixture
+def isolated_parque_ficticio_path(tmp_path):
+    path = tmp_path / 'ParqueFicticio'
+    shutil.copytree(ParqueFicticio_path, path, ignore=shutil.ignore_patterns('*.pkl', '__pycache__'))
+    return str(path) + os.sep
+
+
 def test_WaspGridSiteDistanceClass(site):
     wgs = XRSite(site.ds, distance=TerrainFollowingDistance(distance_resolution=2000))
     assert wgs.distance.distance_resolution == 2000
@@ -211,28 +218,28 @@ def test_distances(distance, dw_ref):
     npt.assert_almost_equal(dh_ijlk, np.zeros_like(dh_ijlk))
 
 
-def test_speed_up_using_pickle():
-    pkl_fn = ParqueFicticio_path + "ParqueFicticio.pkl"
+def test_speed_up_using_pickle(isolated_parque_ficticio_path):
+    pkl_fn = isolated_parque_ficticio_path + "ParqueFicticio.pkl"
     if os.path.exists(pkl_fn):
         os.remove(pkl_fn)
     start = time.time()
-    site = WaspGridSite.from_wasp_grd(ParqueFicticio_path, speedup_using_pickle=False)
+    site = WaspGridSite.from_wasp_grd(isolated_parque_ficticio_path, speedup_using_pickle=False)
     time_wo_pkl = time.time() - start
-    site = WaspGridSite.from_wasp_grd(ParqueFicticio_path, speedup_using_pickle=True)
+    site = WaspGridSite.from_wasp_grd(isolated_parque_ficticio_path, speedup_using_pickle=True)
     assert os.path.exists(pkl_fn)
     start = time.time()
-    site = WaspGridSite.from_wasp_grd(ParqueFicticio_path, speedup_using_pickle=True)
+    site = WaspGridSite.from_wasp_grd(isolated_parque_ficticio_path, speedup_using_pickle=True)
     time_w_pkl = time.time() - start
     npt.assert_array_less(time_w_pkl * 8, time_wo_pkl)
 
 
-def test_speed_up_using_pickle_wrong_pkl():
-    pkl_fn = ParqueFicticio_path + "ParqueFicticio.pkl"
+def test_speed_up_using_pickle_wrong_pkl(isolated_parque_ficticio_path):
+    pkl_fn = isolated_parque_ficticio_path + "ParqueFicticio.pkl"
     if os.path.exists(pkl_fn):
         os.remove(pkl_fn)
     shutil.copy(__file__, pkl_fn)
     with contextlib.redirect_stdout(io.StringIO()):
-        site = WaspGridSite.from_wasp_grd(ParqueFicticio_path, speedup_using_pickle=True)
+        site = WaspGridSite.from_wasp_grd(isolated_parque_ficticio_path, speedup_using_pickle=True)
 
 
 def test_one_layer():

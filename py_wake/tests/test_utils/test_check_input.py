@@ -5,7 +5,6 @@ import pytest
 from py_wake import np
 from py_wake.tests import clear_ptf, ptf
 from py_wake.utils.check_input import check_input, is_list_like
-import time
 
 
 def test_check_input():
@@ -23,15 +22,10 @@ def test_check_input():
     check_input(input_space, np.array([(1, 200)]).T, ['ws', 'wd'])
 
 
-def test_ptf():
-    f = Path(ptf('test.txt', 'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae'))
+def test_ptf(tmp_path):
+    f = Path(ptf('test.txt', 'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae', path=tmp_path))
     assert f.read_text() == 'test123'
-    for _ in range(3):
-        try:
-            clear_ptf()
-            break
-        except Exception:
-            time.sleep(0.5)
+    clear_ptf(tmp_path)
     assert f.exists() is False
     assert f.parent.exists() is False
 

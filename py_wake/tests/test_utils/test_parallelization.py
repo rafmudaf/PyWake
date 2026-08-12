@@ -1,10 +1,9 @@
 import time
 
 import numpy as np
-from memory_profiler import _get_memory
 
-from py_wake.utils.parallelization import get_map_func, get_pool_map
-from py_wake.utils.profiling import get_memory_usage, timeit
+from py_wake.utils.parallelization import get_map_func
+from py_wake.utils.profiling import timeit
 
 
 # def test_gc_function():

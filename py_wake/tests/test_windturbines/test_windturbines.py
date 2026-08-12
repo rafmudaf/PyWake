@@ -103,9 +103,7 @@ def test_twotype_windturbines():
                           hornsrev1.power_curve[:, 0], hornsrev1.power_curve[:, 1] * 1.1, 'w',
                           hornsrev1.ct_curve[:, 1]))
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=DeprecationWarning)
-        wts = WindTurbines.from_WindTurbines([v80, v88])
+    wts = WindTurbines.from_WindTurbine_lst([v80, v88])
 
     types0 = [0] * 9
     types1 = [0, 0, 0, 1, 1, 1, 0, 0, 0]
@@ -116,6 +114,13 @@ def test_twotype_windturbines():
         npt.assert_almost_equal(wfm.aep(wt9_x, wt9_y, type=types0), 81.20692684738599)
         npt.assert_almost_equal(wfm.aep(wt9_x, wt9_y, type=types1), 83.72460696861253)
         npt.assert_almost_equal(wfm.aep(wt9_x, wt9_y, type=types2), 88.87264035035497)
+
+
+def test_from_windturbines_is_deprecated():
+    with pytest.warns(DeprecationWarning, match='from_WindTurbines is deprecated'):
+        turbines = WindTurbines.from_WindTurbines([V80(), V80()])
+
+    npt.assert_array_equal(turbines.name(), ['V80', 'V80'])
 
 
 @pytest.mark.parametrize('wts_wtg', [

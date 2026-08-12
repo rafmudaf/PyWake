@@ -29,6 +29,7 @@ def iea34_130_2WT_Surrogate():
     return IEA34_130_2WT_Surrogate()
 
 
+@pytest.mark.slow
 def test_one_turbine_case0(iea34_130_1WT_Surrogate):
     ws, ti, shear = 9.2984459862, 0.0597870198, 0.2
 

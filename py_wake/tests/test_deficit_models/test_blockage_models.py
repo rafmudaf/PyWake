@@ -8,6 +8,7 @@ from py_wake.deficit_models.gaussian import BastankhahGaussianDeficit
 from py_wake.deficit_models.hybridinduction import HybridInduction
 from py_wake.deficit_models.no_wake import NoWakeDeficit
 from py_wake.deficit_models.noj import NOJDeficit
+from py_wake.deficit_models.rans_lut import RANSLUTDemoDeficit
 from py_wake.deficit_models.rankinehalfbody import RankineHalfBody
 from py_wake.deficit_models.rathmann import Rathmann, RathmannScaled
 from py_wake.deficit_models.selfsimilarity import SelfSimilarityDeficit, SelfSimilarityDeficit2020
@@ -177,7 +178,10 @@ def test_aep_two_turbines(setup, blockage_model, blockage_loss):
         plt.show()
 
 
-@pytest.mark.parametrize('deficitModel', get_models(BlockageDeficitModel))
+@pytest.mark.parametrize(
+    'deficitModel',
+    [pytest.param(model, marks=pytest.mark.slow) if model is RANSLUTDemoDeficit else model
+     for model in get_models(BlockageDeficitModel)])
 def test_All2AllIterative_all_blockage_DeficitModels_with_RotorAvg(deficitModel):
     if deficitModel is None:
         return

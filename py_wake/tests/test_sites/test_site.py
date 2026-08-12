@@ -242,6 +242,7 @@ def test_uniform_site_probability():
     npt.assert_array_almost_equal(lw.P, p_wd)
 
 
+@pytest.mark.xdist_group("site_exports")
 def test_ieawind37_ontology_yaml_export(site):
     dirname = 'test_export_temp'
     filename = 'WindResource.yaml'
@@ -253,6 +254,7 @@ def test_ieawind37_ontology_yaml_export(site):
     assert yml_site.ds.equals(site.ds)
 
 
+@pytest.mark.xdist_group("site_exports")
 def test_ieawind37_ontology_netcdf_export(site):
     dirname = 'test_export_temp'
     filenames = ['WindResource.yaml', 'WindResource.nc']

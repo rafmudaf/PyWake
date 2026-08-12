@@ -1,6 +1,7 @@
 import atexit
 import gc
 import multiprocessing
+import os
 import platform
 from itertools import starmap
 
@@ -25,10 +26,14 @@ def get_pool(processes=multiprocessing.cpu_count()):
             pool.close()
         pool_dict.clear()
 
-        if platform.system() == 'Darwin':  # pragma: no cover
-            pool_dict[processes] = multiprocessing.get_context('fork').Pool(processes)
-        else:
-            pool_dict[processes] = multiprocessing.Pool(processes)
+        start_method = multiprocessing.get_start_method()
+        if platform.system() == "Linux":  # pragma: no cover
+            # Safer option for most use cases; Default with Python >=3.14
+            start_method = "forkserver"
+        # Advanced users can override for lower overhead option like "fork"
+        start_method = os.environ.get("PYWAKE_MULTIPROCESSING_START_METHOD", start_method)
+        pool_dict[processes] = multiprocessing.get_context(start_method).Pool(processes)
+
     return pool_dict[processes]
 
 

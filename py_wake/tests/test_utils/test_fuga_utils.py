@@ -1,4 +1,5 @@
-import os
+from pathlib import Path
+import shutil
 
 import pytest
 
@@ -16,12 +17,14 @@ import contextlib
 
 @pytest.mark.parametrize('name', ['Z0=0.03000000Zi=00401Zeta0=0.00E+00',
                                   'Z0=0.00408599Zi=00400Zeta0=0.00E+00'])
-def test_dat2netcdf(name):
+def test_dat2netcdf(name, tmp_path):
+    source = Path(tfp) / f'fuga/2MW/{name}'
     with contextlib.redirect_stdout(io.StringIO()):
-        ds = dat2netcdf(tfp + f'fuga/2MW/{name}')
-    ref = xr.load_dataset(tfp + f"fuga/2MW/{name}.nc")
+        ds = dat2netcdf(shutil.copytree(source, tmp_path / name))
+    ref = xr.load_dataset(source.parent / f"{name}.nc")
+    print(ds.filename)
     assert ds == ref
-    os.remove(ds.filename)
+    shutil.rmtree(tmp_path / name)
 
 
 @pytest.mark.parametrize('zeta0', [-6e-7, 0, 6e-7])

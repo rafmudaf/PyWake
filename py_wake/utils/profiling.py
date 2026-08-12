@@ -108,14 +108,23 @@ def get_memory_usage():
 
 
 def check_memory_usage(f, subtract_initial=True):
-    import memory_profiler
+    import tracemalloc
 
     def wrap(*args, **kwargs):
-        initial_mem_usage = get_memory_usage()
-        mem_usage, res = memory_profiler.memory_usage((f, args, kwargs), interval=.02, max_usage=True, retval=True)
+        was_tracing = tracemalloc.is_tracing()
+        if not was_tracing:
+            tracemalloc.start()
+        initial_mem_usage = tracemalloc.get_traced_memory()[0]
+        tracemalloc.reset_peak()
+        try:
+            res = f(*args, **kwargs)
+            peak_mem_usage = tracemalloc.get_traced_memory()[1]
+        finally:
+            if not was_tracing:
+                tracemalloc.stop()
         if subtract_initial:
-            mem_usage -= initial_mem_usage
-        return res, mem_usage
+            peak_mem_usage -= initial_mem_usage
+        return res, max(peak_mem_usage, 0) / 1024**2
     return wrap
 
 

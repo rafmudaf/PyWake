@@ -125,8 +125,8 @@ def test_IEA37_ex16(deficitModel, aep_ref):
     npt.assert_allclose(aep_ref[1], [9500, 8700, 11500, 14300, 21300, 25900, 39600, 44300, 23900,
                                      13900, 15200, 33000, 72100, 18300, 12500, 8000], rtol=.2)
 
-    npt.assert_almost_equal(aep_MW_l.sum(), aep_ref[0], 5)
-    npt.assert_array_almost_equal(aep_MW_l, aep_ref[1], 5)
+    npt.assert_allclose(aep_MW_l.sum(), aep_ref[0], rtol=1e-5, atol=1e-5)
+    npt.assert_allclose(aep_MW_l, aep_ref[1], rtol=1e-5, atol=1e-5)
 
 
 @pytest.mark.parametrize('deficitModel', get_models(WakeDeficitModel))
@@ -531,8 +531,8 @@ def test_IEA37_ex16_windFarmModel(windFarmModel, aep_ref):
     npt.assert_allclose(aep_ref[1], [9500, 8700, 11500, 14300, 21300, 25900, 39600, 44300, 23900,
                                      13900, 15200, 33000, 72100, 18300, 12500, 8000], rtol=.15)
 
-    npt.assert_almost_equal(aep_MW_l.sum(), aep_ref[0], 5)
-    npt.assert_array_almost_equal(aep_MW_l, aep_ref[1], 5)
+    npt.assert_allclose(aep_MW_l.sum(), aep_ref[0], rtol=1e-5, atol=1e-5)
+    npt.assert_allclose(aep_MW_l, aep_ref[1], rtol=1e-5, atol=1e-5)
 
 
 def test_own_deficit_is_zero():

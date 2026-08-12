@@ -1,6 +1,8 @@
 from pathlib import Path
 import tempfile
+import hashlib
 
+from filelock import FileLock
 import numpy
 import pooch
 
@@ -11,24 +13,27 @@ npt = numpy.testing
 WindFarmModel.verbose = False
 
 
-def ptf(filename, known_hash=None):
+def ptf(filename, known_hash=None, path=None, processor=None):
     # Download a file and save it locally, returning the path to it.
     # Running this again will not cause a download. Pooch will check the hash
     # (checksum) of the downloaded file against the given value to make sure
     # it's the right file (not corrupted or outdated).
+    path = Path(path) if path is not None else Path.home() / 'PyWakeTestFiles'
     local_file = Path(__file__).parent / 'test_files' / filename
-    if local_file.exists():
+    if processor is None and local_file.exists():
         if known_hash is None or pooch.file_hash(local_file) == known_hash:
             return local_file
 
     pct_encoding = {'/': '%2F', '.': '%2E', '_': '%5F', '-': '%2D'}
     for k, v in pct_encoding.items():
         filename = filename.replace(k, v)
-    ret = pooch.retrieve(url=f"https://gitlab.windenergy.dtu.dk/api/v4/projects/3385/repository/files/{filename}/raw",
-                         path=Path.home() / 'PyWakeTestFiles',
-                         known_hash=known_hash)
-    return ret
+    url = f"https://gitlab.windenergy.dtu.dk/api/v4/projects/3385/repository/files/{filename}/raw"
+    cache_key = hashlib.sha256(url.encode()).hexdigest()
+    path.mkdir(parents=True, exist_ok=True)
+    with FileLock(path / f'.{cache_key}.lock', timeout=300):
+        return pooch.retrieve(url=url, path=path, known_hash=known_hash, processor=processor)
 
 
-def clear_ptf():
-    shutil.rmtree(Path.home() / 'PyWakeTestFiles')
+def clear_ptf(path=None):
+    path = Path(path) if path is not None else Path.home() / 'PyWakeTestFiles'
+    shutil.rmtree(path)

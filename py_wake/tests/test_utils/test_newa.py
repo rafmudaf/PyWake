@@ -1,5 +1,4 @@
 import tempfile
-import warnings
 
 import numpy as np
 import numpy.testing as npt
@@ -59,8 +58,7 @@ def test_NEWAGridTimeseries_compare_zarr_web(zarr_file):
     try:
         newa_grid2 = NEWAGridTimeseries.from_web(x, y, h, start='2020-04-01', stop='2020-04-01T23:30')
     except urllib.error.HTTPError as e:
-        warnings.warn(f"Web request failed with error {e}. Skipping test_NEWAGridTimeseries_compare_zarr_web.")
-        return
+        pytest.xfail(f"Web request failed with error {e}")
     ds2 = newa_grid2.to_pywake()
 
     npt.assert_allclose(ds1.WS.sel(h=75), ds2.WS.sel(h=75))
@@ -77,8 +75,7 @@ def test_NEWAPointTimeseries_compare_zarr_web(zarr_file):
     try:
         newa_pts2 = NEWAPointTimeseries.from_web(x, y, h, start='2020-04-01', stop='2020-04-01T23:30')
     except urllib.error.HTTPError as e:
-        warnings.warn(f"Web request failed with error {e}. Skipping test_NEWAGridTimeseries_compare_zarr_web.")
-        return
+        pytest.xfail(f"Web request failed with error {e}")
     ds2 = newa_pts2.to_pywake()
 
     npt.assert_allclose(ds1.WS.sel(h=75), ds2.WS.sel(h=75))

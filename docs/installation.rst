@@ -45,8 +45,17 @@ PyWake’s base code is open-sourced and freely available on `GitLab
 Developer Installation
 -------------------------------
 
-We highly recommend developers to install PyWake into the environment created previously. The commands to clone and install PyWake with developer options including dependencies required to run the tests into the current active environment in an Anaconda Prompt are as follows::
+The recommended developer setup uses `Pixi <https://pixi.sh>`_. After installing Pixi, clone PyWake (note that `Git LFS <https://git-lfs.com/>`_ is required) and run the tests with::
+
+   git clone https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake.git
+   cd PyWake
+   pixi run --environment test test
+
+The test task uses all available CPU cores. Pass normal pytest arguments after the task name, for example ``pixi run --environment test test py_wake/tests/test_main.py``.
+
+Alternatively, install PyWake into the environment created previously. The commands to clone and install PyWake with developer options including dependencies required to run the tests into the current active environment in an Anaconda Prompt are as follows::
 
    git clone https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake.git
    cd PyWake
    pip install -e .[test]
+   pytest

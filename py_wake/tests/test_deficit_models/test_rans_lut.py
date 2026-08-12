@@ -76,7 +76,7 @@ def test_rans_lut_deficit():
          10.0268, 9.9979, 9.992, 9.9908, 9.9906], 4)
 
 
-def test_rans_lut():
+def test_rans_lut(tmp_path):
     # move turbine 1 600 300
     wt_x = [-250, 600, -500, 0, 500, -250, 250]
     wt_y = [433, 300, 0, 0, 0, -433, -433]
@@ -96,11 +96,11 @@ def test_rans_lut():
 
     # Test Power as RANS post step
     dataset = xr.open_dataset(demo_lut)
-    lutname = 'rans_lut.nc'
+    lutname = tmp_path / 'rans_lut.nc'
     dataset.to_netcdf(lutname)
     aDControl = ADControl.from_lut(dataset.deficits, wts, ws_cutin=4, ws_cutout=25, dws=1.0, cal_TI=0.06)
-    aDControl.save()
-    ADcontrolfile = 'lutcal_WT80_Ti0.06_0.dat'
+    aDControl.save(folder=tmp_path)
+    ADcontrolfile = tmp_path / 'lutcal_WT80_Ti0.06_0.dat'
 
     aDControl_saved = ADControl.from_files([ADcontrolfile])
 
@@ -125,8 +125,8 @@ def test_rans_lut():
     npt.assert_array_almost_equal(simres.TI_eff.values.flatten(), TI_eff_expected, 6)
 
     # Test with provided control file
-    aDControl.save()
-    ADcontrolfile = 'lutcal_WT80_Ti0.06_0.dat'
+    aDControl.save(folder=tmp_path)
+    ADcontrolfile = tmp_path / 'lutcal_WT80_Ti0.06_0.dat'
     aDControl_saved = ADControl.from_files([ADcontrolfile])
     ellipsys_power, WS_eff_star, ct_star = get_Ellipsys_equivalent_output(
         simres, aDControl_saved, flowmap_maxpoints=100)
@@ -138,7 +138,7 @@ def test_rans_lut():
     # Test multi lut (using the same file for now)
     lut2 = xr.load_dataset(lutname)
     lut2.attrs['name'] = 'V80b'
-    lutname2 = 'rans_lut2.nc'
+    lutname2 = tmp_path / 'rans_lut2.nc'
     lut2.to_netcdf(lutname2)
     wts = WindTurbines.from_WindTurbine_lst([wts, wts])
     wfm = RANSLUT([dataset, lut2], site, wts)
@@ -181,7 +181,7 @@ def test_rans_lut():
     npt.assert_array_almost_equal(ct_star.flatten(), CTstar_expected, 6)
 
 
-def test_rans_lut_multi_wd_ws():
+def test_rans_lut_multi_wd_ws(tmp_path):
     # move turbine 1 600 300
     wt_x = [-250, 600, -500, 0, 500, -250, 250]
     wt_y = [433, 300, 0, 0, 0, -433, -433]
@@ -213,11 +213,12 @@ def test_rans_lut_multi_wd_ws():
 
     # Test Power as RANS post step
     dataset = xr.open_dataset(demo_lut)
-    lutname = 'rans_lut.nc'
+    lutname = tmp_path / 'rans_lut.nc'
     dataset.to_netcdf(lutname)
     aDControl = ADControl.from_lut(dataset.deficits, wts, ws_cutin=4, ws_cutout=25, dws=1.0, cal_TI=0.06)
+    aDControl.save(folder=tmp_path)
 
-    ADcontrolfile = 'lutcal_WT80_Ti0.06_0.dat'
+    ADcontrolfile = tmp_path / 'lutcal_WT80_Ti0.06_0.dat'
     aDControl_saved = ADControl.from_files([ADcontrolfile])
 
     npt.assert_array_almost_equal(aDControl.U_CT_CP_AD_ws, aDControl_saved.U_CT_CP_AD_ws, 10)
@@ -306,7 +307,7 @@ def test_RANSLUT_multiturbine():
         ellipsys_power, WS_eff_star, ct_star = get_Ellipsys_equivalent_output(sim_res, aDControl)
 
 
-def test_rans_conv_lut():
+def test_rans_conv_lut(tmp_path):
     # move turbine 1 600 300
     wt_x = [-250, 600, -500, 0, 500, -250, 250]
     wt_y = [433, 300, 0, 0, 0, -433, -433]
@@ -316,8 +317,8 @@ def test_rans_conv_lut():
     demo_lut = ptf('ranslut/V80_ranslut_demo.nc',
                    '846213eb655255f6e2201a47c2406f9e77f243f369398cb389bf7320b457dea8')
     # Fit Gaussian deficits to hub height profiles for WeightedSum superposition
-    demo_convlut = 'V80_gaussian.nc'
-    fit_gauss(demo_lut, 'V80_gaussian.nc', ymin=-10, ymax=10)
+    demo_convlut = tmp_path / 'V80_gaussian.nc'
+    fit_gauss(demo_lut, demo_convlut, ymin=-10, ymax=10)
     wfm = RANSLUT(demo_lut, site, wts, convlut=demo_convlut, rotorAvgModel=GQGridRotorAvg(4, 3))
 
     simres, _ = timeit(wfm.__call__, verbose=0, line_profile=0,
@@ -333,7 +334,7 @@ def test_rans_conv_lut():
     npt.assert_array_almost_equal(ct_star.flatten(), [1.33143388, 1.33273949, 1.36552774, 1.33062844, 1.36035502, 1.36553333, 1.36413403])
 
 
-def test_rans_conv_lut_multiturbine():
+def test_rans_conv_lut_multiturbine(tmp_path):
     # Test with provided control file
     demo_lut = ptf('ranslut/V80_ranslut_demo.nc',
                    '846213eb655255f6e2201a47c2406f9e77f243f369398cb389bf7320b457dea8')
@@ -344,17 +345,19 @@ def test_rans_conv_lut_multiturbine():
     lut_V120.deficits[:] *= .5
 
     # Fit Gaussian deficits to hub height profiles for WeightedSum superposition
-    demo_convlut = 'V80_gaussian.nc'
-    fit_gauss(demo_lut, 'V80_gaussian.nc', ymin=-10, ymax=10, xfits=np.linspace(0.0, 100.0, 11))
-    lut_V120.to_netcdf('V120.nc')
-    fit_gauss('V120.nc', 'V120_gaussian.nc', ymin=-10, ymax=10, xfits=np.linspace(0.0, 100.0, 11))
+    demo_convlut = tmp_path / 'V80_gaussian.nc'
+    fit_gauss(demo_lut, demo_convlut, ymin=-10, ymax=10, xfits=np.linspace(0.0, 100.0, 11))
+    lut_V120_path = tmp_path / 'V120.nc'
+    lut_V120.to_netcdf(lut_V120_path)
+    lut_V120_convlut = tmp_path / 'V120_gaussian.nc'
+    fit_gauss(lut_V120_path, lut_V120_convlut, ymin=-10, ymax=10, xfits=np.linspace(0.0, 100.0, 11))
 
     v80 = HornsrevV80()
     v120 = WindTurbine('V120', 120, 70, powerCtFunction=PowerCtTabular(
         hornsrev1.power_curve[:, 0], hornsrev1.power_curve[:, 1], 'w', hornsrev1.ct_curve[:, 1]))
-    wts = WindTurbine.from_WindTurbines([v80, v120])
+    wts = WindTurbines.from_WindTurbine_lst([v80, v120])
 
-    wfm = RANSLUT([ds, lut_V120], UniformSite(ti=0.075 * 0.8), wts, convlut=['V80_gaussian.nc', 'V120_gaussian.nc'], rotorAvgModel=GQGridRotorAvg(4, 3))
+    wfm = RANSLUT([ds, lut_V120], UniformSite(ti=0.075 * 0.8), wts, convlut=[demo_convlut, lut_V120_convlut], rotorAvgModel=GQGridRotorAvg(4, 3))
     type_i = np.array([0, 0, 1, 1])
     sim_res = wfm([0, 500, 1000, 1500], [0, 0, 0, 0], type=type_i, wd=[90, 270], ws=10.0)
     if 0:

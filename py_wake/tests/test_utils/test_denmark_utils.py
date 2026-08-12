@@ -4,11 +4,21 @@ import pytest
 
 from py_wake.utils.denmark_utils import DKWindTurbines
 
+pytestmark = pytest.mark.xdist_group("denmark")
 
+# All xdist workers collect this module before group scheduling, so parameters
+# must not instantiate DKWindTurbines and race to populate a cold shared cache.
+N_WT = {'Rødsand1': 72, 'Rødsand2': 90, 'Hornsrev1': 80, 'Hornsrev2': 91, 'Hornsrev3': 49,
+        'Anholt': 111, 'Middelgrunden': 20, 'Vesterhav syd': 20, 'Vesterhav nord': 21, 'Krigers Flak': 72}
+
+
+@pytest.mark.slow
 def test_get_dk_turbine_data():
 
     xlim, ylim = (690000, 700000), (6170000, 6180000)
     dk_wt = DKWindTurbines(update_cache=0)
+    # Keep side-effect-free collection parameters aligned with production filters.
+    assert N_WT.keys() == dk_wt.wf_filters.keys()
     dk_wt.set_filter(xlim, ylim)
     dk_wt.plot()
     if 0:
@@ -38,16 +48,13 @@ def test_production():
         da.sel(id='570715000000090202', time=slice(f"2012-01", f"2022-01-01")).sum(), expected_value, rtol=0.05)
 
 
-@pytest.mark.parametrize('wf_name', DKWindTurbines().wf_filters.keys())
-def test_get_wind_farm(wf_name):
+@pytest.mark.parametrize('wf_name,n_wt', N_WT.items())
+def test_get_wind_farm(wf_name, n_wt):
     dk_wt = DKWindTurbines()
-    n_wt_dict = {'Rødsand1': 72, 'Rødsand2': 90, 'Hornsrev1': 80, 'Hornsrev2': 91, 'Hornsrev3': 49,
-                 'Anholt': 111, 'Middelgrunden': 20, 'Vesterhav syd': 20, 'Vesterhav nord': 21, 'Krigers Flak': 72
-                 }
 
     wf = dk_wt.get_wind_farm(wf_name)
     if 0:
         wf.plot()
         plt.title(wf_name)
         plt.show()
-    assert len(wf) == n_wt_dict[wf_name]
+    assert len(wf) == n_wt

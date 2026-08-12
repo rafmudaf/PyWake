@@ -386,9 +386,10 @@ def test_i_time_dependent_WS():
     npt.assert_array_equal(sim_res.WS, WS_it)
 
 
-def test_load_save(complex_grid_site):
-    complex_grid_site.save(tfp + "tmp.nc")
-    site = XRSite.load(tfp + "tmp.nc", interp_method='linear')
+def test_load_save(complex_grid_site, tmp_path):
+    filename = tmp_path / "site.nc"
+    complex_grid_site.save(filename)
+    site = XRSite.load(filename, interp_method='linear')
     test_complex_grid_local_wind(site)
 
 
@@ -471,7 +472,7 @@ def test_from_flow_box_2wt():
     npt.assert_array_almost_equal(ref_aep, aep.sel(wt=0))
 
 
-def test_neighbour_farm_speed():
+def test_neighbour_farm_speed(tmp_path):
     # import and setup site and windTurbines
     site = IEA37Site(16)
 
@@ -499,9 +500,9 @@ def test_neighbour_farm_speed():
             h=[100, 110, 120])
 
         wake_site = XRSite.from_flow_box(flow_box)
-        wake_site.save('tmp.nc')
+        wake_site.save(tmp_path / 'wake_site.nc')
     else:
-        wake_site = XRSite.load('tmp.nc')
+        wake_site = XRSite.load(tmp_path / 'wake_site.nc')
 
     wf_model_wake_site = PropagateDownwind(wake_site, windTurbines,
                                            wake_deficitModel=BastankhahGaussianDeficit(use_effective_ws=True),
