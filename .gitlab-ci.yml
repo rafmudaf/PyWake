@@ -5,6 +5,7 @@ default:
 
 variables:
   PIXI_VERSION: v0.76.2
+  SETUPTOOLS_SCM_SUBPROCESS_TIMEOUT: 180 # Default 40 seconds times out on git describe..
 
 stages:
   - test
