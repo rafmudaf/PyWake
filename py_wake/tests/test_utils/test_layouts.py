@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from py_wake.utils.layouts import rectangle, square, circular, farm_area
+from py_wake.utils.layouts import rectangle, square, circular, farm_area, phyllotaxis
 from py_wake.examples.data.hornsrev1 import V80
 from py_wake.examples.data.iea37._iea37 import IEA37Site
 from py_wake.tests import npt
@@ -41,3 +41,12 @@ def test_area(xy, area):
         plt.plot(*xy, '.')
         plt.show()
     npt.assert_allclose(farm_area(*xy), area, rtol=0.001)
+
+
+def test_phyllotaxis_min_spacing():
+    rotor_diameter = 240
+    for size in [2, 3, 4, 16, 64, 500]:
+        for min_spacing in [4, 8, 13.7]:
+            x, y = phyllotaxis(size, rotor_diameter, min_spacing)
+            d = np.hypot(x - x[:, None], y - y[:, None])
+            np.testing.assert_allclose(d[d > 0].min(), min_spacing * rotor_diameter)
