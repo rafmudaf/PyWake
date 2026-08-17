@@ -42,6 +42,5 @@ def phyllotaxis(N, diameter, min_spacing=5):
     angle = index * (np.pi * (3 - np.sqrt(5))) + np.radians(7)
     x, y = np.sqrt(index) * np.cos(angle), np.sqrt(index) * np.sin(angle)
     d = np.hypot(x - x[:, None], y - y[:, None])
-    x, y = (np.array([x, y]) * min_spacing * diameter
-            / (d[d > 0].min() if N > 1 else 1))
+    x, y = (np.array([x, y]) * min_spacing * diameter / (d[d > 0].min() if N > 1 else 1))
     return x - x.mean(), y - y.mean()

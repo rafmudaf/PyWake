@@ -671,8 +671,7 @@ class ShadowModel:
         size_gb = array_size / (1024**3) * n_arrays
         if size_gb > self.memory_warning_limit:  # Warning threshold of 1GB
             warnings.warn(
-                f"Large shadow arrays detected! The shadow array will use {
-                    size_gb:.2f} GB of memory.",
+                f"Large shadow arrays detected! The shadow array will use {size_gb:.2f} GB of memory.",
                 RuntimeWarning,
             )
 

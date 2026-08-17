@@ -2,7 +2,6 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from pvlib.solarposition import get_solarposition
 
 
 VECTORIZED_METHODS = {"nrel_numpy", "ephemeris"}
@@ -87,7 +86,7 @@ def solar_position(dates, lat, lon, method="nrel_numpy", **kwargs):
 
     n_locations = lat_array.size
     n_times = len(dates)
-
+    from pvlib.solarposition import get_solarposition
     if method not in VECTORIZED_METHODS:
         sun_vectors = np.empty((n_locations, n_times, 3), dtype=float)
         celestial_coord = np.empty((n_locations, n_times, 2), dtype=float)

@@ -273,8 +273,7 @@ class ShadowBase:
             return getattr(self.dataset, name)
         except AttributeError:
             raise AttributeError(
-                f"Neither {
-                    self.__class__.__name__} nor its dataset has attribute '{name}'"
+                f"Neither {self.__class__.__name__} nor its dataset has attribute '{name}'"
             )
 
     def __getitem__(self, item):
