@@ -26,6 +26,7 @@ from py_wake.wind_farm_models.engineering_models import (
     All2AllIterative,
     PropagateDownwind,
 )
+from py_wake.deficit_models.noj import NOJDeficit
 
 
 class FlatSite(UniformSite):
@@ -292,6 +293,32 @@ def test_distance_over_rectangle2():
         plt.show()
 
     npt.assert_allclose(d, ref, rtol=0.01)
+
+
+@pytest.mark.parametrize('wfm_cls', [All2AllIterative, PropagateDownwind])
+def test_TerrainFollowingDistance_diff_wd(wfm_cls):
+    class BoxSite(UniformSite):
+        @staticmethod
+        def elevation(x, y):
+            return (np.abs(x - 250) < 10) * 100
+
+    wd = np.array([0, 90, 270])
+
+    site = BoxSite(distance=TerrainFollowingDistance())
+
+    wfm = wfm_cls(site, V80(), wake_deficitModel=NOJDeficit(rotorAvgModel=None))
+    sim_res = wfm([0, 500], [0, 0], wd=wd, WS_eff=0)
+    npt.assert_array_almost_equal(sim_res.WS_eff.values[:, :, 0], [[12., 11.25, 12.],
+                                                                   [12., 12., 11.25]], 2)
+
+    if 0:
+        for ax, _wd in zip(plt.subplots(3, 1)[1], wd):
+            sim_res.flow_map(grid=XYGrid(resolution=100), wd=_wd).plot_wake_map(ax=ax)
+            for wt in [0, 1]:
+                ax.plot([], label=f'WT{wt} WS_eff={sim_res.WS_eff.sel(wt=wt, wd=_wd).values[0]:.2f} m/s')
+            ax.legend()
+
+        plt.show()
 
 
 def test_distance_plot():

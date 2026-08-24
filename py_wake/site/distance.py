@@ -141,19 +141,23 @@ class TerrainFollowingDistance(StraightDistance):
         dw_ijlk, hcw_ijlk, dh_ijlk = StraightDistance.__call__(self, src_x_ilk, src_y_ilk, src_h_ilk,
                                                                WD_ilk=WD_ilk, wd_l=wd_l, dst_xyh_jlk=dst_xyh_jlk)
 
-        assert src_x_ilk.shape[2] == 1, 'TerrainFollowingDistance does not support flowcase dependent positions'
+        assert src_x_ilk.shape[2] == 1, 'TerrainFollowingDistance does not support wind-speed dependent positions'
 
-        src_x_i, src_y_i = src_x_ilk[:, 0, 0], src_y_ilk[:, 0, 0]
+        src_x_il, src_y_il = src_x_ilk[:, :, 0], src_y_ilk[:, :, 0]
 
-        dst_x_j, dst_y_j = dst_x_jlk[:, 0, 0], dst_y_jlk[:, 0, 0]
+        dst_x_jl, dst_y_jl = dst_x_jlk[:, :, 0], dst_y_jlk[:, :, 0]
 
         # Generate interpolation lines
         xy = np.array([(np.linspace(src_x, dst_x, self.distance_resolution),
                         np.linspace(src_y, dst_y, self.distance_resolution))
-                       for src_x, src_y in zip(src_x_i, src_y_i)
-                       for dst_x, dst_y in zip(dst_x_j, dst_y_j)])
-        theta_ij = gradients.arctan2(dst_y_j[na, :, ] - src_y_i[:, na],
-                                     dst_x_j[na, :] - src_x_i[:, na])
+                       for src_x, src_y in zip(src_x_il[:, 0], src_y_il[:, 0])
+                       for dst_x, dst_y in zip(dst_x_jl[:, 0], dst_y_jl[:, 0])])
+        if dst_xyh_jlk is None:
+            theta_ijl = gradients.arctan2(dst_y_jl[na, :, 0] - src_y_il[:, na, 0],
+                                          dst_x_jl[na, :, 0] - src_x_il[:, na, 0])[:, :, na]
+        else:
+            theta_ijl = gradients.arctan2(dst_y_jl[na, :, :] - src_y_il[:, na, :],
+                                          dst_x_jl[na, :, :] - src_x_il[:, na, :])
         x, y = xy[:, 0], xy[:, 1]
 
         # find height along interpolation line
@@ -174,8 +178,8 @@ class TerrainFollowingDistance(StraightDistance):
             WD_ilk = np.asarray(wd_l)[na, :, na]
 
         WD_il = mean_deg(WD_ilk, 2)
-        dir_ij = 90 - rad2deg(theta_ij)
-        wdir_offset_ijl = np.asarray(WD_il)[:, na] - dir_ij[:, :, na]
+        dir_ijl = 90 - rad2deg(theta_ijl)
+        wdir_offset_ijl = np.asarray(WD_il)[:, na] - dir_ijl
         theta_ijl = deg2rad(90 - wdir_offset_ijl)
         dw_ijlk = (- np.sin(theta_ijl) * d_ij[:, :, na])[..., na]
 
