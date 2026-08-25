@@ -38,9 +38,11 @@ class VortexCylinder(BlockageDeficitModel):
         """
         return 4. * rho / ((1. + rho)**2 + xi**2 + eps**2)
 
-    def _calc_layout_terms(self, D_src_il, dw_ijlk, cw_ijlk, **_):
+    def _calc_layout_terms(self, D_src_il, dw_ijlk, cw_ijlk, IJLK, **_):
 
         R_ijlk = (D_src_il / 2)[:, na, :, na]
+        cw_ijlk = np.broadcast_to(cw_ijlk, IJLK)
+        dw_ijlk = np.broadcast_to(dw_ijlk, IJLK)
         # determine dimensionless radial and streamwise coordinates
         rho_ijlk = cw_ijlk / R_ijlk
         # formulation is invalid for r==R therefore avoid this condition
@@ -69,13 +71,13 @@ class VortexCylinder(BlockageDeficitModel):
         # deficit shape function
         self.dmu_ijlk = term1_ijlk + term2_ijlk
 
-    def calc_deficit(self, WS_ilk, D_src_il, dw_ijlk, cw_ijlk, ct_ilk, **_):
+    def calc_deficit(self, WS_ilk, D_src_il, dw_ijlk, cw_ijlk, ct_ilk, IJLK, **_):
         """
         The analytical relationships can be found in [1,2], in particular equations (7-8) from [1].
         """
         if not self.deficit_initalized:
             # calculate layout term, self.dmu_G_ijlk
-            self._calc_layout_terms(D_src_il, dw_ijlk, cw_ijlk)
+            self._calc_layout_terms(D_src_il, dw_ijlk, cw_ijlk, IJLK=IJLK)
 
         # circulation/strength of vortex cylinder
         gammat_ilk = WS_ilk * 2. * self.ct2a(ct_ilk)

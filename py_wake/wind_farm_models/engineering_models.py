@@ -131,6 +131,8 @@ class EngineeringWindFarmModel(WindFarmModel):
             self.blockage_deficitModel.superpositionModel = self.blockage_deficitModel.superpositionModel or alt_model
 
         self.args4all = set(self.args4deficit)
+        if self.blockage_deficitModel:
+            self.args4all |= set(self.blockage_deficitModel.args4deficit)
         if self.turbulenceModel:
             self.args4all |= set(self.turbulenceModel.args4model)
         if self.deflectionModel:

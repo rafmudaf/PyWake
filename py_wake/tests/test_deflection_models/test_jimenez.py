@@ -10,6 +10,11 @@ from py_wake.tests import npt
 from py_wake.wind_farm_models.engineering_models import PropagateDownwind
 from py_wake.superposition_models import SquaredSum
 from py_wake.turbulence_models.crespo import CrespoHernandez
+from py_wake.deficit_models.deficit_model import BlockageDeficitModel
+from py_wake.utils.model_utils import get_models
+from py_wake.deficit_models.no_wake import NoWakeDeficit
+from py_wake.site._site import UniformSite
+from py_wake.wind_farm_models.all2alliterative import All2AllIterative
 
 
 @pytest.mark.parametrize('yaw,tilt,cx,cz', [
@@ -91,4 +96,27 @@ def test_JimenezLocal():
             npt.assert_allclose(wake_center.y, ref, atol=.1)
     if plot:
         ax.legend()
+        plt.show()
+
+
+@pytest.mark.parametrize('blockage_model', get_models(BlockageDeficitModel, exclude_None=True))
+def test_jimenez_wake_deflection_with_blockage(blockage_model):
+    """Check that jimenez can run with all blockage models"""
+
+    wfm = All2AllIterative(UniformSite(), V80(), wake_deficitModel=NoWakeDeficit(),
+                           blockage_deficitModel=blockage_model(),
+                           deflectionModel=JimenezWakeDeflection(),
+                           turbulenceModel=CrespoHernandez()
+                           )
+    x = np.arange(2) * 4 * 80
+    kwargs = dict(x=x, y=x * 0, wd=[180, 270, 0], ws=np.arange(8, 12), tilt=0)
+    sim_res0 = wfm(**kwargs, yaw=0)
+    sim_res30 = wfm(**kwargs, yaw=30)
+    assert sim_res30.WS_eff.shape == (2, 3, 4)
+
+    if 0:
+        for ax, sim_res in zip(plt.subplots(2)[1], [sim_res0, sim_res30]):
+            sim_res.flow_map(XYGrid(resolution=100), wd=270, ws=10).plot_wake_map(ax=ax, levels=10)
+            ax.axhline(0, color='k', lw=0.5)
+        plt.suptitle(blockage_model.__name__)
         plt.show()
