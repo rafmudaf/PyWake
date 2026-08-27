@@ -27,6 +27,7 @@ from py_wake.wind_farm_models.engineering_models import (
     PropagateDownwind,
 )
 from py_wake.deficit_models.noj import NOJDeficit
+from py_wake.utils.layouts import square
 
 
 class FlatSite(UniformSite):
@@ -319,6 +320,27 @@ def test_TerrainFollowingDistance_diff_wd(wfm_cls):
             ax.legend()
 
         plt.show()
+
+
+@pytest.mark.parametrize('wfm_cls', [PropagateDownwind, All2AllIterative])
+def test_terrain_following_distance_matches_straight_distance_for_flat_ground(wfm_cls):
+    class FlatSite(UniformSite):
+        def __init__(self):
+            UniformSite.__init__(self, distance=TerrainFollowingDistance())
+
+        @staticmethod
+        def elevation(x, y):
+            return np.zeros_like(np.asarray(x, dtype=float))
+
+    def run(site):
+        wfm = wfm_cls(site, V80(), NOJDeficit())
+        x, y = square(16, 400)
+        sim_res = wfm(x, y, wd=np.arange(0.0, 360.0, 30.0), ws=np.arange(4.0, 26.0, 2.0), WS_eff=0)
+        return sim_res.WS_eff
+
+    ws_straight, ws_terrain = [run(site) for site in [UniformSite(), FlatSite()]]
+
+    npt.assert_array_almost_equal(ws_straight, ws_terrain)
 
 
 def test_distance_plot():

@@ -144,31 +144,48 @@ class TerrainFollowingDistance(StraightDistance):
         assert src_x_ilk.shape[2] == 1, 'TerrainFollowingDistance does not support wind-speed dependent positions'
 
         src_x_il, src_y_il = src_x_ilk[:, :, 0], src_y_ilk[:, :, 0]
-
         dst_x_jl, dst_y_jl = dst_x_jlk[:, :, 0], dst_y_jlk[:, :, 0]
 
-        # Generate interpolation lines
-        xy = np.array([(np.linspace(src_x, dst_x, self.distance_resolution),
-                        np.linspace(src_y, dst_y, self.distance_resolution))
-                       for src_x, src_y in zip(src_x_il[:, 0], src_y_il[:, 0])
-                       for dst_x, dst_y in zip(dst_x_jl[:, 0], dst_y_jl[:, 0])])
         if dst_xyh_jlk is None:
+            # Generate interpolation lines
+            ip_line_x_ijn, ip_line_y_ijn = np.moveaxis([[(np.linspace(src_x, dst_x, self.distance_resolution),
+                                                          np.linspace(src_y, dst_y, self.distance_resolution))
+                                                         for src_x, src_y in zip(src_x_il[:, 0], src_y_il[:, 0])]
+                                                        for dst_x, dst_y in zip(dst_x_jl[:, 0], dst_y_jl[:, 0])], 2, 0)
             theta_ijl = gradients.arctan2(dst_y_jl[na, :, 0] - src_y_il[:, na, 0],
                                           dst_x_jl[na, :, 0] - src_x_il[:, na, 0])[:, :, na]
-        else:
+
+            # find height along interpolation line
+            h_ijn = self.site.elevation(ip_line_x_ijn.flatten(), ip_line_y_ijn.flatten()).reshape(ip_line_x_ijn.shape)
+            # calculate horizontal and vertical distance between interpolation points
+            dxy_ij = np.sqrt((ip_line_x_ijn[:, :, 1] - ip_line_x_ijn[:, :, 0])**2 +
+                             (ip_line_y_ijn[:, :, 1] - ip_line_y_ijn[:, :, 0])**2)
+            # calculate distance along terrain following interpolation lines
+            d_ijl = np.sum(np.sqrt(dxy_ij[:, :, na]**2 + np.diff(h_ijn, 1, axis=2)**2), 2)[:, :, na]
+
+        elif src_x_il.shape[0] == src_y_il.shape[0] == 1:
+            # propagate downwind: one source pr wd
             theta_ijl = gradients.arctan2(dst_y_jl[na, :, :] - src_y_il[:, na, :],
                                           dst_x_jl[na, :, :] - src_x_il[:, na, :])
-        x, y = xy[:, 0], xy[:, 1]
+            # Generate interpolation lines
+            ip_line_x_jln, ip_line_y_jln = np.moveaxis(np.array([[(np.linspace(src_x, dst_x, self.distance_resolution),
+                                                                   np.linspace(src_y, dst_y, self.distance_resolution))
+                                                       for src_x, src_y, dst_x, dst_y in zip(src_x_il[0], src_y_il[0], dst_x_l, dst_y_l)]
+                                                                 for dst_x_l, dst_y_l in zip(dst_x_jl, dst_y_jl)]), 2, 0)
 
-        # find height along interpolation line
-        h = self.site.elevation(x.flatten(), y.flatten()).reshape(x.shape)
-        # calculate horizontal and vertical distance between interpolation points
-        dxy = np.sqrt((x[:, 1] - x[:, 0])**2 + (y[:, 1] - y[:, 0])**2)
-        dh = np.diff(h, 1, 1)
-        # calculate distance along terrain following interpolation lines
-        s = np.sum(np.sqrt(dxy[:, na]**2 + dh**2), 1)
+            # find height along interpolation line
+            h_jln = self.site.elevation(ip_line_x_jln.flatten(), ip_line_y_jln.flatten()).reshape(ip_line_x_jln.shape)
+            # calculate horizontal and vertical distance between interpolation points
 
-        d_ij = s.reshape(dw_ijlk.shape[:2])
+            dxy_jl = np.sqrt((ip_line_x_jln[:, :, 1] - ip_line_x_jln[:, :, 0])**2 +
+                             (ip_line_y_jln[:, :, 1] - ip_line_y_jln[:, :, 0])**2)
+            # calculate distance along terrain following interpolation lines
+            d_ijl = np.sum(np.sqrt(dxy_jl[:, :, na]**2 + np.diff(h_jln, 1, axis=2)**2), 2)[na]
+
+        else:
+            dw_ijlk = np.array([self(src_x_lk, src_y_lk, src_h_lk, WD_ilk=WD_ilk, wd_l=wd_l, dst_xyh_jlk=dst_xyh_jlk)[0][0]
+                                for src_x_lk, src_y_lk, src_h_lk in zip(src_x_ilk, src_y_ilk, src_h_ilk)])
+            return dw_ijlk, hcw_ijlk, dh_ijlk
 
         # project terrain following distance between wts onto downwind direction
         # instead of projecting the distances onto first x,y and then onto down wind direction
@@ -181,6 +198,6 @@ class TerrainFollowingDistance(StraightDistance):
         dir_ijl = 90 - rad2deg(theta_ijl)
         wdir_offset_ijl = np.asarray(WD_il)[:, na] - dir_ijl
         theta_ijl = deg2rad(90 - wdir_offset_ijl)
-        dw_ijlk = (- np.sin(theta_ijl) * d_ij[:, :, na])[..., na]
+        dw_ijlk = (- np.sin(theta_ijl) * d_ijl)[..., na]
 
         return dw_ijlk, hcw_ijlk, dh_ijlk
