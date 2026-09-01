@@ -105,7 +105,7 @@ class WeightedSum(SuperpositionModel):
         # Determine non-centreline deficit ratio
         # Local deficit
         us = usc * np.exp(-1 / (2 * (sigma_sqr + 1e-30)) * cw**2)
-        us[usc == 0] = 0.0
+        us = np.where(usc == 0, 0.0, us)
 
         # Set lower deficit limit below which deficits are linearly added
         us_lim = max(self.delta, 1e-30) * Ws[na]
@@ -120,8 +120,7 @@ class WeightedSum(SuperpositionModel):
             # Get indices where deficits need to be combined
             Ilx = Il.any(axis=0)
             # Total cross-wind integrated deficit
-            us_int = np.zeros_like(us)
-            us_int[Il] = usc[Il] * 2 * np.pi * sigma_sqr[Il]
+            us_int = np.where(Il, usc * 2 * np.pi * sigma_sqr, 0.0)
             # initialize combined quanatities
             Uc = Ws.copy()
             Uc_star = Ws.copy()
@@ -133,11 +132,7 @@ class WeightedSum(SuperpositionModel):
             Uc_star = 10 * Uc
             if np.iscomplexobj(Ws) or np.iscomplexobj(uc):
                 Uc_star = Uc_star.astype(np.complex128)
-            tmp1, tmp2 = np.zeros_like(us), np.zeros_like(us)
-            tmpUS, tmpUSint = np.zeros_like(us), np.zeros_like(us)
             sum1, sum2, ucn = np.zeros_like(Us), np.zeros_like(Us), np.ones_like(uc)
-            # sum1 precomputed part
-            sum1_pre = usc[Il]**2 * np.pi * sigma_sqr[Il]
             n_wt = us.shape[0]
             # Iterate until combined convection velocity converges
             while (np.max(cabs((Uc[Ilx] - Uc_star[Ilx]) / Uc_star[Ilx])) > self.max_err) and (count < self.max_iter):
@@ -146,33 +141,33 @@ class WeightedSum(SuperpositionModel):
                     # Take maximum across all turbines to initilize global convection velocity
                     Uc = np.max(np.where(Il, uc, 0), 0)
                 else:
-                    Uc = Uc_star.copy()
+                    Uc = Uc_star
                 # Initialize and avoid division by zero
-                ucn[:] = 1.
                 Inz = Uc != 0
                 # Limit weights to self.weight_limit
-                ucn[:, Inz] = np.minimum(uc[:, Inz] / Uc[Inz], self.weight_limit)
+                safe_uc = np.where(Inz, Uc, 1.0)
+                ucn = np.where(
+                    Inz[na],
+                    np.minimum(uc / safe_uc[na], self.weight_limit),
+                    1.0,
+                )
 
                 # Combined local deficit
-                # dummy matrix to keep original matrix shape
-                tmpUS[:] = 0
-                tmpUS[Il] = ucn[Il] * us[Il]
+                tmpUS = np.where(Il, ucn * us, 0.0)
                 Us = np.sum(tmpUS, axis=0)
                 # Combined deficit integrated to infinity in cross-wind direction
-                tmpUSint[:] = 0
-                tmpUSint[Il] = ucn[Il] * us_int[Il]
+                tmpUSint = np.where(Il, ucn * us_int, 0.0)
                 Us_int = np.sum(tmpUSint, axis=0)
 
                 # First sum of momentum deficit
                 # sum_i^N (uc_i u_i)^2
-                sum1[:], tmp1[:] = .0, 0.
-                tmp1[Il] = ucn[Il]**2 * sum1_pre
+                tmp1 = np.where(Il, ucn**2 * us_int * usc / 2, 0.0)
                 sum1 = np.sum(tmp1, axis=0)
                 # Second sum which represents the cross terms
                 # 2 sum i>j (uc_i u_i) (uc_j u_j)
                 if n_wt > 1:
                     # Initialize
-                    sum2[:] = .0
+                    sum2 = np.zeros_like(Us)
                     for j in range(n_wt - 1):
                         # Only cross with larger indices
                         k = np.arange(j + 1, n_wt, dtype=int)
@@ -181,26 +176,28 @@ class WeightedSum(SuperpositionModel):
                         if Ilxx.any():
                             # To keep the shape, arrays are repeated and a dummy initilized
                             # Instead of a dummy one could use a loop, but this seemed faster
-                            tmp2 = np.zeros(((len(k),) + sigma_sqr.shape[1:]), dtype=sigma_sqr.dtype)
-                            s1, s2 = np.repeat(sigma_sqr[j][na], len(k), axis=0)[Ilxx], sigma_sqr[k][Ilxx]
-                            w2w_hcw = cabs(hcw[j][na] - hcw[k])[Ilxx]
-                            w2w_dh = cabs(dh[j][na] - dh[k])[Ilxx]
+                            sigma_j = np.repeat(sigma_sqr[j][na], len(k), axis=0)
+                            sigma_k = sigma_sqr[k]
+                            sigma_sum = np.where(Ilxx, sigma_j + sigma_k, 1.0)
+                            w2w_hcw = cabs(hcw[j][na] - hcw[k])
+                            w2w_dh = cabs(dh[j][na] - dh[k])
                             cross_sigma_jk = 2 * np.exp(-(w2w_hcw**2 + w2w_dh**2) /
-                                                        (2 * (s1 + s2))) * np.pi * s1 * s2 / (s1 + s2)
-                            tmp2[Ilxx] = 2 * np.repeat((ucn[j] * usc[j])[na], len(k), axis=0)[Ilxx] * \
-                                (ucn[k][Ilxx] * usc[k][Ilxx]) * cross_sigma_jk
+                                                        (2 * sigma_sum)) * np.pi * sigma_j * sigma_k / sigma_sum
+                            pair_term = 2 * np.repeat((ucn[j] * usc[j])[na], len(k), axis=0) * (ucn[k] * usc[k])
+                            tmp2 = np.where(Ilxx, pair_term * cross_sigma_jk, 0.0)
                             sum2 += np.sum(tmp2, axis=0)
 
                 # Avoid division by zero
-                Us_int[Us_int == 0] = 1
+                safe_Us_int = np.where(Us_int == 0, 1.0, Us_int)
                 # Update combined convection velocity
-                Uc_star[Ilx] = Ws[Ilx] - (sum1 + sum2)[Ilx] / Us_int[Ilx]
+                next_Uc_star = Ws - (sum1 + sum2) / safe_Us_int
+                Uc_star = np.where(Ilx, next_Uc_star, Uc_star)
 
                 count += 1
-        # Replace nan with 1.0 for cases where convection variable are undefined (i.e. upstream of wt)
-        ucn = np.nan_to_num(ucn, nan=1.0)
+        # Replace non-finite values where convection variables are undefined (i.e. upstream of wt)
+        ucn = np.where(np.isfinite(ucn), ucn, 1.0)
         # Reset weights to linear sum where WeightedSum is not applied
-        ucn[~Il] = 1.0
+        ucn = np.where(Il, ucn, 1.0)
         return np.sum(deficit_jxxx * ucn, axis=0)
 
 

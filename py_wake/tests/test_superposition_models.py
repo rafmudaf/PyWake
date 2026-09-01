@@ -10,7 +10,7 @@ from py_wake.deficit_models.noj import NOJDeficit
 from py_wake.turbulence_models import TurbulenceModel
 from py_wake.flow_map import HorizontalGrid, Points
 from py_wake.tests.test_deficit_models.test_noj import NibeA0
-from py_wake.examples.data.hornsrev1 import V80, wt9_x, wt9_y
+from py_wake.examples.data.hornsrev1 import Hornsrev1Site, V80, wt9_x, wt9_y
 from py_wake.deficit_models.deficit_model import BlockageDeficitModel, WakeDeficitModel
 from py_wake.deficit_models import NoWakeDeficit
 from py_wake.examples.data.iea37._iea37 import IEA37Site, IEA37_WindTurbines
@@ -142,6 +142,13 @@ def test_complex_superposition_blockage(superpositionModel, ref):
                            superpositionModel=superpositionModel)
     sim_res = wfm(x, y, ws=[8., 9., 10.], wd=[270., 280.])
     npt.assert_array_almost_equal(np.sum(sim_res.WS_eff), ref, 7)
+
+
+def test_weighted_sum_gradients():
+    wfm = All2AllIterative(Hornsrev1Site(), V80(), wake_deficitModel=NiayifarGaussianDeficit(),
+                           superpositionModel=WeightedSum(), turbulenceModel=CrespoHernandez())
+    dx, dy = wfm.aep_gradients(x=[0., 500., 1000.], y=[0., 20., -10.], wd=[270.], ws=[8.], TI=[.06], time=True)
+    assert np.isfinite([dx, dy]).all()
 
 
 @pytest.mark.parametrize('superpositionModel', get_models(SuperpositionModel, exclude_None=True))
