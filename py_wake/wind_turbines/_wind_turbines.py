@@ -7,6 +7,7 @@ from py_wake.wind_turbines.power_ct_functions import PowerCtFunctionList, PowerC
 from xarray.core.dataarray import DataArray
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
+import logging
 
 # Create a qualitative color map for plotting the turbines.
 # Play with the seed to change the order of the colors.
@@ -287,6 +288,67 @@ Use WindTurbines(names, diameters, hub_heights, power_ct_funcs) instead""", Depr
         axs = [ax, ax2]
         ax.legend()
         return axs
+
+    def plot_skyline(self, view_x, view_y, x, y, types=0, look_downstream=True, ax=None):
+        """Plot wind farm layout in a skyline view seen from a view point (view_x, view_y)
+
+        Parameters
+        ----------
+        view_x : float
+            x position of view point
+        view_y : float
+            y position of view point
+        x : array_like
+            x position of wind turbines
+        y : array_like
+            y position of wind turbines
+        types : int or array_like
+            type of the wind turbines
+        look_downstream : bool
+              If True, the view is looking downstream (i.e. at 270 degrees you will see wind turbines towards East)
+              If False, thew view is looking upstream (i.e. at 270 degrees you will see wind turbines towards West)
+        ax : pyplot or matplotlib axes object, default None
+            Axis to plot on. If None, a new twinx axis is created.
+        """
+        # ensure same length as x
+        x, y = np.asarray(x), np.asarray(y)
+        types = (np.zeros(len(x)) + types).astype(int)
+        old_gca = plt.gca()
+        ax = ax or plt.gca().twinx()
+
+        hh = self.hub_height(types)
+        D = self.diameter(types)
+        dy, dx = x - view_x, y - view_y
+        dist = np.sqrt(dx**2 + dy**2)
+        direction = (np.rad2deg(np.arctan2(dy, dx))) % 360
+        if look_downstream:
+            direction = (direction + 180) % 360
+        m = dist != 0
+        for _dir, _h, _dist, _D in zip(direction[m], hh[m], dist[m], D[m]):
+            hh_angle = np.rad2deg(np.arctan2(_h, _dist))
+            D_angle = np.rad2deg(np.arctan2(_D / 2, _dist))
+            plt.plot([_dir, _dir], [0, hh_angle], '-', color='grey')
+            circle1 = plt.Circle((_dir, hh_angle), D_angle, color='grey', fill=False)
+            plt.gca().add_artist(circle1)
+        ax.axhline(0, color='grey')
+
+        ax.set_aspect('equal')
+        ax.axis('off')
+
+        def adjust_wt_to_ground(event):
+            previous_level = logging.root.manager.disable
+            logging.disable(logging.WARNING)
+
+            for i in range(20):
+                ax.set_ylim([-0, None])
+                # ax.redraw_in_frame()
+                ax.figure.draw_without_rendering()
+                if np.abs(ax.get_ylim()[0]) < 0.1:
+                    break
+            logging.disable(previous_level)
+        ax.figure.canvas.mpl_connect('resize_event', adjust_wt_to_ground)
+        adjust_wt_to_ground(None)
+        plt.sca(old_gca)
 
     @classmethod
     def from_WindTurbine_lst(cls, wt_lst):

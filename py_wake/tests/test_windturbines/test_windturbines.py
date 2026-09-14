@@ -259,6 +259,15 @@ def test_plot_power_ct():
         plt.show()
 
 
+def test_plot_skyline():
+    wt = WindTurbines.from_WindTurbine_lst([IEA37_WindTurbines(), V80()])
+    y = [0, 400, 800]
+    x = [0, 0, 0]
+    wt.plot_skyline(view_x=-400, view_y=0, x=x, y=y, types=[0, 0, 1])
+    if 0:
+        plt.show()
+
+
 def test_method():
     wt_linear = V80()
     wt_pchip = V80(method='pchip')
